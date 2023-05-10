@@ -30,6 +30,12 @@ impl Board {
         }
         Ok(me)
     }
+    pub fn locals(&self) -> RawBoard {
+        self.locals
+    }
+    pub fn ships(&self) -> ShipSet {
+        self.ships
+    }
     pub fn shot(&mut self, cell: &Cell) -> Option<Shot> {
         if *self.shot_mut(cell) != Shot::Empty {
             return None;
@@ -42,7 +48,7 @@ impl Board {
         self.update_cell(cell, outcome);
         Some(outcome)
     }
-    fn contains_ship(&self, cell: &Cell) -> bool {
+    pub fn contains_ship(&self, cell: &Cell) -> bool {
         self.ships.occupied_cells().contains(cell)
     }
     fn update_cell(&mut self, cell: &Cell, value: Shot) {
@@ -57,18 +63,17 @@ impl Board {
 impl std::fmt::Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "   1  2  3  4  5  6  7  8  9 10")?;
-        let mut letter = 'A' as u32;
-        for (rowi, row) in self.locals.iter().enumerate() {
-            let row_letter = char::from_u32(letter).unwrap_or('X');
+        let letter = 'A' as u32;
+        for idx in 0..10 {
+            let row_letter = char::from_u32(letter + idx).unwrap_or('X');
             write!(f, "{row_letter} ")?;
-            letter += 1;
-            for (celli, cell) in row.iter().enumerate() {
-                let bg_color = if self.contains_ship(&Cell::new(rowi, celli)) {
+            for (rowi, row) in self.locals.iter().enumerate() {
+                let bg_color = if self.contains_ship(&Cell::new(rowi, idx as usize)) {
                     "100"
                 } else {
                     "104"
                 };
-                match cell {
+                match row[idx as usize] {
                     Shot::Hit => write!(f, "\u{001b}[31;{bg_color}m \u{25cf} \u{001b}[0m"),
                     Shot::Miss => write!(f, "\u{001b}[0;{bg_color}m \u{25cf} \u{001b}[0m"),
                     Shot::Empty => write!(f, "\u{001b}[0;{bg_color}m   \u{001b}[0m"),
@@ -123,17 +128,19 @@ impl ShipSet {
         cells.into_iter().all(move |x| uniq.insert(x))
     }
 }
+
 #[macro_use]
 mod macros {
     #[macro_export]
     macro_rules! add_cells_for_ship {
         ($cells:expr, $ship:expr, $length:literal) => {
+            let pos = $ship.pos;
             for i in 0..$length {
                 let (cell_x, cell_y) = match $ship.rot {
-                    ShipRotation::Up => ($ship.x, $ship.y - i),
-                    ShipRotation::Down => ($ship.x, $ship.y + i),
-                    ShipRotation::Left => ($ship.x - i, $ship.y),
-                    ShipRotation::Right => ($ship.x + i, $ship.y),
+                    ShipRotation::Up => ($ship.pos.x, $ship.pos.y - i),
+                    ShipRotation::Down => ($ship.pos.x, $ship.pos.y + i),
+                    ShipRotation::Left => ($ship.pos.x - i, $ship.pos.y),
+                    ShipRotation::Right => ($ship.pos.x + i, $ship.pos.y),
                 };
                 $cells.push(Cell::new(cell_x, cell_y));
             }
@@ -141,19 +148,70 @@ mod macros {
     }
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
+pub struct ShipSetBuilder {
+    pub carrier: Option<ShipState>,
+    pub battleship: Option<ShipState>,
+    pub destroyer: Option<ShipState>,
+    pub submarine: Option<ShipState>,
+    pub patrol: Option<ShipState>,
+}
+
+impl ShipSetBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn build(self) -> Option<ShipSet> {
+        let set = ShipSet {
+            carrier: self.carrier?,
+            battleship: self.battleship?,
+            destroyer: self.destroyer?,
+            submarine: self.submarine?,
+            patrol: self.patrol?,
+        };
+        Some(set)
+    }
+    pub fn carrier(mut self, ship: ShipState) -> Self {
+        self.carrier = Some(ship);
+        self
+    }
+    pub fn battleship(mut self, ship: ShipState) -> Self {
+        self.battleship = Some(ship);
+        self
+    }
+    pub fn destroyer(mut self, ship: ShipState) -> Self {
+        self.destroyer = Some(ship);
+        self
+    }
+    pub fn submarine(mut self, ship: ShipState) -> Self {
+        self.submarine = Some(ship);
+        self
+    }
+    pub fn patrol(mut self, ship: ShipState) -> Self {
+        self.patrol = Some(ship);
+        self
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct ShipState {
     rot: ShipRotation,
-    x: usize,
-    y: usize,
+    pos: Cell,
+    sunk: bool,
 }
 
 impl ShipState {
-    pub fn new(x: usize, y: usize, rot: ShipRotation) -> Result<Self, Error> {
-        if x > 9 || y > 9 {
-            return Err(Error::InvalidShipState);
-        };
-        Ok(Self { rot, x, y })
+    pub fn new(pos: Cell, rot: ShipRotation, sunk: bool) -> Self {
+        Self { rot, pos, sunk }
+    }
+    pub fn rot(&self) -> ShipRotation {
+        self.rot
+    }
+    pub fn pos(&self) -> Cell {
+        self.pos
+    }
+    pub fn sunk(&self) -> bool {
+        self.sunk
     }
 }
 

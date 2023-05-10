@@ -18,7 +18,23 @@ fn main() {
         ShipState::new(4, 0, ShipRotation::Down).expect("invalid ship state"),
     )
     .expect("Invalid board layout");
-    board.shot(&Cell::new(0, 3));
-    board.shot(&Cell::new(9, 9));
     println!("{board}");
+    let mut shot = String::with_capacity(3);
+    loop {
+        shot.clear();
+        std::io::stdin().read_line(&mut shot).expect("Failed to read line");
+        let chars: Vec<char> = shot.trim_end().chars().collect();
+        if chars.len() != 2 {
+            eprintln!("Wrong length for shot: {}", chars.len());
+            continue;
+        }
+        let l_idx = chars[0].to_ascii_uppercase() as usize - 'A' as usize;
+        let n_idx = chars[1].to_digit(10).expect("invalid digit") - 1;
+        let n_idx = n_idx as usize;
+        if board.shot(&Cell::new(n_idx, l_idx)).is_none() {
+            println!("You already took this shot!");
+            continue;
+        }
+        println!("{board}");
+    }
 }

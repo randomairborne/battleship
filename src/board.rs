@@ -1,5 +1,3 @@
-use std::fmt::Write;
-
 use crate::{cell::Cell, Error};
 
 #[derive(Debug, Clone)]
@@ -32,14 +30,17 @@ impl Board {
         }
         Ok(me)
     }
-    pub fn shot(&mut self, cell: &Cell) -> Shot {
+    pub fn shot(&mut self, cell: &Cell) -> Option<Shot> {
+        if *self.shot_mut(cell) != Shot::Empty {
+            return None;
+        }
         let outcome = if self.contains_ship(cell) {
             Shot::Hit
         } else {
             Shot::Miss
         };
         self.update_cell(cell, outcome);
-        outcome
+        Some(outcome)
     }
     fn contains_ship(&self, cell: &Cell) -> bool {
         self.ships.occupied_cells().contains(cell)
@@ -57,17 +58,21 @@ impl std::fmt::Display for Board {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "   1  2  3  4  5  6  7  8  9 10")?;
         let mut letter = 'A' as u32;
-        for row in self.locals {
+        for (rowi, row) in self.locals.iter().enumerate() {
             let row_letter = char::from_u32(letter).unwrap_or('X');
             write!(f, "{row_letter} ")?;
             letter += 1;
-            for item in row {
-                let out = match item {
-                    Shot::Hit => " \u{001b}[31m\u{25cf}\u{001b}[0m ",
-                    Shot::Miss => " \u{001b}[0m\u{25ce}\u{001b}[0m ",
-                    Shot::Empty => "\u{001b}[34m\u{2591}\u{2591}\u{2591}\u{001b}[0m",
+            for (celli, cell) in row.iter().enumerate() {
+                let bg_color = if self.contains_ship(&Cell::new(rowi, celli)) {
+                    "100"
+                } else {
+                    "104"
                 };
-                f.write_str(out)?;
+                match cell {
+                    Shot::Hit => write!(f, "\u{001b}[31;{bg_color}m \u{25cf} \u{001b}[0m"),
+                    Shot::Miss => write!(f, "\u{001b}[0;{bg_color}m \u{25cf} \u{001b}[0m"),
+                    Shot::Empty => write!(f, "\u{001b}[0;{bg_color}m   \u{001b}[0m"),
+                }?;
             }
             writeln!(f)?;
         }

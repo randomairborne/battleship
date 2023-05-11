@@ -111,7 +111,7 @@ impl ShipState {
     pub fn sunk(&self) -> bool {
         self.sunk
     }
-    pub fn length(&self) -> usize {
+    pub const fn length(&self) -> usize {
         match self.kind {
             ShipType::AircraftCarrier => 5,
             ShipType::Battleship => 4,
@@ -178,11 +178,11 @@ impl ShipType {
     /// Returns `true` if complete
     pub fn next(&mut self) -> bool {
         *self = match self {
-            ShipType::AircraftCarrier => Self::Battleship,
-            ShipType::Battleship => Self::Destroyer,
-            ShipType::Destroyer => Self::Submarine,
-            ShipType::Submarine => Self::PatrolBoat,
-            ShipType::PatrolBoat => return true,
+            Self::AircraftCarrier => Self::Battleship,
+            Self::Battleship => Self::Destroyer,
+            Self::Destroyer => Self::Submarine,
+            Self::Submarine => Self::PatrolBoat,
+            Self::PatrolBoat => return true,
         };
         false
     }

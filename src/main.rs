@@ -1,3 +1,10 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
+#![allow(clippy::module_name_repetitions)]
+mod board;
+mod cell;
+mod error;
+mod ship;
+
 use std::io::{Stdout, Write};
 
 use board::{Board, Shot};
@@ -12,27 +19,20 @@ use crossterm::{
 };
 use ship::{ShipRotation, ShipState, ShipType};
 
-mod board;
-mod cell;
-mod error;
-mod ship;
-
 pub use error::Error;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     crossterm::terminal::enable_raw_mode().expect("Failed to enable raw mode on terminal");
     std::panic::set_hook(Box::new(|info| {
         crossterm::terminal::disable_raw_mode().ok();
-        println!("{}", info);
+        eprintln!("{info}");
     }));
     let mut stdout = std::io::stdout();
     let mut cursor = Cell::new(0, 0);
     let p1 = do_place(&mut stdout, &mut cursor, "Player 1: Place your ships");
     show_pass(&mut stdout)?;
     let p2 = do_place(&mut stdout, &mut cursor, "Player 2: Place your ships");
-    loop {
-
-    }
+    crossterm::terminal::disable_raw_mode().ok();
     Ok(())
 }
 
@@ -156,7 +156,7 @@ fn render_board(
         queue!(
             stdout,
             MoveTo(0, y),
-            Print(char::from_u32('A' as u32 + (y as u32 - 1)).unwrap_or('X'))
+            Print(char::from_u32('A' as u32 + (u32::from(y) - 1)).unwrap_or('X'))
         )?;
     }
     for x in 0..10 {
@@ -181,6 +181,7 @@ fn render_board(
         stdout,
         MoveTo(0, 13),
         Print(message),
+        #[allow(clippy::cast_possible_truncation)]
         MoveTo(cursor.x() as u16 * 3 + 2, cursor.y() as u16 + 1)
     )?;
     stdout.flush()?;

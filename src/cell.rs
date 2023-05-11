@@ -16,10 +16,10 @@ impl Cell {
         }
         Self { x, y }
     }
-    pub fn x(&self) -> usize {
+    pub const fn x(&self) -> usize {
         self.x
     }
-    pub fn y(&self) -> usize {
+    pub const fn y(&self) -> usize {
         self.y
     }
 }

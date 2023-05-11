@@ -94,7 +94,7 @@ pub struct ShipState {
 }
 
 impl ShipState {
-    pub fn new(pos: Cell, rot: ShipRotation, sunk: bool, kind: ShipType) -> Self {
+    pub const fn new(pos: Cell, rot: ShipRotation, sunk: bool, kind: ShipType) -> Self {
         Self {
             rot,
             pos,
@@ -102,13 +102,13 @@ impl ShipState {
             kind,
         }
     }
-    pub fn rot(&self) -> ShipRotation {
+    pub const fn rot(&self) -> ShipRotation {
         self.rot
     }
-    pub fn pos(&self) -> Cell {
+    pub const fn pos(&self) -> Cell {
         self.pos
     }
-    pub fn sunk(&self) -> bool {
+    pub const fn sunk(&self) -> bool {
         self.sunk
     }
     pub const fn length(&self) -> usize {
@@ -119,7 +119,7 @@ impl ShipState {
             ShipType::PatrolBoat => 2,
         }
     }
-    pub fn overflows(&self) -> bool {
+    pub const fn overflows(&self) -> bool {
         match self.rot {
             ShipRotation::Up => self.pos.y() < self.length(),
             ShipRotation::Down => self.pos.y() + self.length() > 10,

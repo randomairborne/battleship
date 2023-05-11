@@ -1,4 +1,4 @@
-use crate::{cell::Cell, ship::ShipSet, Error};
+use crate::{cell::Cell, ship::ShipSet};
 
 #[derive(Debug, Clone)]
 pub struct Board {
@@ -13,9 +13,6 @@ impl Board {
             locals: [[Shot::Empty; 10]; 10],
             ships: ShipSet::default(),
         }
-    }
-    pub fn raw(&self) -> RawBoard {
-        self.locals
     }
     pub fn fire(&mut self, cell: &Cell) -> Option<Shot> {
         if *self.shot_mut(cell) != Shot::Empty {
@@ -36,7 +33,7 @@ impl Board {
         let shot = self.shot_mut(cell);
         *shot = value;
     }
-    pub fn shot(&self, cell: &Cell) -> Shot {
+    pub const fn shot(&self, cell: &Cell) -> Shot {
         self.locals[cell.x()][cell.y()]
     }
     fn shot_mut(&mut self, cell: &Cell) -> &mut Shot {

@@ -29,9 +29,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }));
     let mut stdout = std::io::stdout();
     let mut cursor = Cell::new(0, 0);
-    let p1 = do_place(&mut stdout, &mut cursor, "Player 1: Place your ships");
+    let _p1 = do_place(&mut stdout, &mut cursor, "Player 1: Place your ships");
     show_pass(&mut stdout)?;
-    let p2 = do_place(&mut stdout, &mut cursor, "Player 2: Place your ships");
+    let _p2 = do_place(&mut stdout, &mut cursor, "Player 2: Place your ships");
     crossterm::terminal::disable_raw_mode().ok();
     Ok(())
 }

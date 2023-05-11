@@ -124,28 +124,25 @@ fn do_place(stdout: &mut Stdout, cursor: &mut Cell, action: &str) -> Result<Boar
             if key.code == KeyCode::Esc {
                 exit();
             }
-            if key.modifiers.contains(KeyModifiers::SHIFT) {
-                match key.code {
-                    KeyCode::Left => ship_rot = ShipRotation::Left,
-                    KeyCode::Right => ship_rot = ShipRotation::Right,
-                    KeyCode::Up => ship_rot = ShipRotation::Up,
-                    KeyCode::Down => ship_rot = ShipRotation::Down,
-                    _ => {}
-                }
-            } else {
-                match key.code {
-                    KeyCode::Left => *cursor -= (1, 0),
-                    KeyCode::Right => *cursor += (1, 0),
-                    KeyCode::Up => *cursor -= (0, 1),
-                    KeyCode::Down => *cursor += (0, 1),
-                    KeyCode::Char(' ') => {
-                        if board.ships.is_valid() && ship.next() {
-                            break;
-                        }
-                        last_action_was_place = true;
+            match key.code {
+                _ => {}
+            }
+            match key.code {
+                KeyCode::Left => *cursor -= (1, 0),
+                KeyCode::Right => *cursor += (1, 0),
+                KeyCode::Up => *cursor -= (0, 1),
+                KeyCode::Down => *cursor += (0, 1),
+                KeyCode::Char('a') | KeyCode::Char('A') => ship_rot = ShipRotation::Left,
+                KeyCode::Char('d') | KeyCode::Char('D') => ship_rot = ShipRotation::Right,
+                KeyCode::Char('w') | KeyCode::Char('W') => ship_rot = ShipRotation::Up,
+                KeyCode::Char('s') | KeyCode::Char('S') => ship_rot = ShipRotation::Down,
+                KeyCode::Char(' ') | KeyCode::Enter => {
+                    if board.ships.is_valid() && ship.next() {
+                        break;
                     }
-                    _ => {}
+                    last_action_was_place = true;
                 }
+                _ => {}
             }
         }
         match ship {

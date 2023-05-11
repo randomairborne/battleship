@@ -44,7 +44,7 @@ impl Board {
     }
 }
 
-type RawBoard = [[Shot; 10]; 10];
+pub type RawBoard = [[Shot; 10]; 10];
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Shot {

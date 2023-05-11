@@ -1,7 +1,37 @@
 use crate::cell::Cell;
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct ShipSet<'a> {
+    carrier: ShipState,
+    battleship: ShipState,
+    destroyer: ShipState,
+    submarine: ShipState,
+    patrol: ShipState,
+    refs: RawShipBoard<'a>,
+}
+
+impl<'a> ShipSet<'a> {
+    pub fn ref_for(&'a self, cell: Cell) -> Option<ShipStateRef<'a>> {
+        self.refs[cell.x()][cell.y()]
+    }
+}
+
+type RawShipBoard<'a> = [[Option<ShipStateRef<'a>>; 10]; 10];
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+pub struct ShipStateRef<'a> {
+    referenced: &'a ShipState,
+}
+
+impl<'a> std::ops::Deref for ShipStateRef<'a> {
+    type Target = ShipState;
+    fn deref(&self) -> &Self::Target {
+       self.referenced
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
-pub struct ShipSet {
+pub struct ShipSetBuilder {
     carrier: Option<ShipState>,
     battleship: Option<ShipState>,
     destroyer: Option<ShipState>,
@@ -9,10 +39,26 @@ pub struct ShipSet {
     patrol: Option<ShipState>,
 }
 
-impl ShipSet {
+impl ShipSetBuilder {
     pub fn new() -> Self {
         Self::default()
     }
+    pub fn build(&self) -> Option<ShipSet> {
+        if !self.is_valid() {
+            return None;
+        }
+        let refs = [[None; 10]; 10];
+        for cell in self.occupied_cells() {}
+        Some(ShipSet {
+            carrier: self.carrier?,
+            battleship: self.battleship?,
+            destroyer: self.destroyer?,
+            submarine: self.submarine?,
+            patrol: self.patrol?,
+            refs,
+        })
+    }
+
     pub fn occupied_cells(&self) -> Vec<Cell> {
         // 17 is the max number of cells we could take up
         // this hyper-optimizes allocations
@@ -64,37 +110,6 @@ impl ShipSet {
         let cells = self.occupied_cells();
         let mut uniq = std::collections::HashSet::new();
         cells.into_iter().all(move |x| uniq.insert(x))
-    }
-    pub const fn lost(&self) -> bool {
-        if let Some(ship) = self.carrier {
-            if !ship.sunk {
-                return false;
-            }
-        }
-        if let Some(ship) = self.battleship {
-            if !ship.sunk {
-                return false;
-            }
-        }
-        if let Some(ship) = self.destroyer {
-            if !ship.sunk {
-                return false;
-            }
-        }
-        if let Some(ship) = self.submarine {
-            if !ship.sunk {
-                return false;
-            }
-        }
-        if let Some(ship) = self.patrol {
-            if !ship.sunk {
-                return false;
-            }
-        }
-        true
-    }
-    pub fn cell_contains_ship(&self, cell: &Cell) -> bool {
-        self.occupied_cells().contains(cell)
     }
     pub fn carrier(&mut self, ship: ShipState) {
         self.carrier = Some(ship);

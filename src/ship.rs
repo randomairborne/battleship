@@ -121,9 +121,9 @@ impl ShipState {
     }
     pub const fn overflows(&self) -> bool {
         match self.rot {
-            ShipRotation::Up => self.pos.y() < self.length(),
+            ShipRotation::Up => self.pos.y() < self.length() - 1,
             ShipRotation::Down => self.pos.y() + self.length() > 10,
-            ShipRotation::Left => self.pos.x() < self.length(),
+            ShipRotation::Left => self.pos.x() < self.length() - 1,
             ShipRotation::Right => self.pos.x() + self.length() > 10,
         }
     }

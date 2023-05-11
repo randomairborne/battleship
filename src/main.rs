@@ -13,7 +13,7 @@ use cell::Cell;
 use crossterm::{
     cursor::MoveTo,
     event::{KeyCode, KeyModifiers},
-    queue,
+    execute, queue,
     style::{Print, PrintStyledContent, Stylize},
     terminal::Clear,
 };
@@ -42,6 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 fn turn(stdout: &mut Stdout, board: &mut Board, cursor: &mut Cell) -> Result<(), Error> {
     show_pass(stdout)?;
+    let mut msg = String::with_capacity(128);
     render_board(stdout, board, cursor, false, "")?;
     loop {
         if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
@@ -57,7 +58,14 @@ fn turn(stdout: &mut Stdout, board: &mut Board, cursor: &mut Cell) -> Result<(),
                 KeyCode::Up => *cursor -= (0, 1),
                 KeyCode::Down => *cursor += (0, 1),
                 KeyCode::Char(' ') => {
-                    board.fire(cursor);
+                    if let Some(shot) = board.fire(cursor) {
+                        msg = match shot {
+                            Shot::Hit => "You hit!",
+                            Shot::Miss => "You missed",
+                            Shot::Empty => "Shot is empty!?",
+                        }
+                        .to_string();
+                    }
                     break;
                 }
                 _ => {}
@@ -65,7 +73,8 @@ fn turn(stdout: &mut Stdout, board: &mut Board, cursor: &mut Cell) -> Result<(),
             render_board(stdout, board, cursor, false, "")?;
         }
     }
-    render_board(stdout, board, cursor, false, "")?;
+    render_board(stdout, board, cursor, false, &msg)?;
+    execute!(stdout, MoveTo(0, 0))?;
     std::thread::sleep(std::time::Duration::from_secs(3));
     Ok(())
 }
@@ -82,6 +91,12 @@ fn show_pass(stdout: &mut Stdout) -> Result<(), Error> {
         if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
             if key.code == KeyCode::Enter || key.code == KeyCode::Char(' ') {
                 break;
+            }
+            if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
+                exit();
+            }
+            if key.code == KeyCode::Esc {
+                exit();
             }
         }
     }
@@ -166,7 +181,7 @@ fn do_place(stdout: &mut Stdout, cursor: &mut Cell, action: &str) -> Result<Boar
             )),
         }
         if !board.ships.is_valid() && !last_action_was_place {
-            message.push_str("Invalid board layout");
+            message = "Invalid board layout".to_string();
         }
         render_board(stdout, &mut board, cursor, true, &message)?;
         message.clear();

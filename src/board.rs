@@ -4,33 +4,31 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct Board {
+pub struct Board<'a> {
     locals: RawBoard,
-    pub ships: ShipSet,
+    pub ships: ShipSet<'a>,
 }
 
-impl Board {
+impl<'a> Board<'a> {
     /// If this function errors, then the ship state was invalid
-    pub fn new() -> Self {
+    pub fn new(ships: ShipSet) -> Self {
         Self {
             locals: [[Shot::Empty; 10]; 10],
-            ships: ShipSet::default(),
+            ships,
         }
     }
     pub fn fire(&mut self, cell: &Cell) -> Option<Shot> {
         if *self.shot_mut(cell) != Shot::Empty {
             return None;
         }
-        let outcome = if self.contains_ship(cell) {
-            Shot::Hit(cell.ship.unwrap())
+
+        let outcome = if let Some(shipref) = self.ships.ref_for(*cell) {
+            Shot::Hit(shipref.kind())
         } else {
             Shot::Miss
         };
         self.update_cell(cell, outcome);
         Some(outcome)
-    }
-    pub fn contains_ship(&self, cell: &Cell) -> bool {
-        self.ships.cell_contains_ship(cell)
     }
     fn update_cell(&mut self, cell: &Cell, value: Shot) {
         let shot = self.shot_mut(cell);

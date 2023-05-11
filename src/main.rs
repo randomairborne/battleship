@@ -17,7 +17,7 @@ use crossterm::{
     style::{Print, PrintStyledContent, Stylize},
     terminal::Clear,
 };
-use ship::{ShipRotation, ShipState, ShipType};
+use ship::{ShipRotation, ShipState, ShipType, ShipSetBuilder};
 
 pub use error::Error;
 
@@ -120,18 +120,18 @@ fn show_pass(stdout: &mut Stdout) -> Result<(), Error> {
     Ok(())
 }
 
-fn do_place(
-    stdout: &mut Stdout,
-    cursor: &mut Cell,
-    player: &str,
-    action: &str,
-) -> Result<Board, Error> {
-    let mut board = Board::new();
+fn do_place<'a>(
+    stdout: &'a mut Stdout,
+    cursor: &'a mut Cell,
+    player: &'a str,
+    action: &'a str,
+) -> Result<Board<'a>, Error> {
+    let mut ships = ShipSetBuilder::new();
     let mut ship_rot = ShipRotation::Down;
     let mut ship = ShipType::AircraftCarrier;
     let mut last_action_was_place = false;
     let mut message = action.to_string();
-    board.ships.carrier(ShipState::new(
+    ships.carrier(ShipState::new(
         *cursor,
         ship_rot,
         false,
@@ -139,7 +139,7 @@ fn do_place(
     ));
     render_screen(
         stdout,
-        &mut board,
+        &mut Board::new(),
         &mut Board::new(),
         cursor,
         player,
@@ -161,12 +161,12 @@ fn do_place(
                 KeyCode::Right => *cursor += (1, 0),
                 KeyCode::Up => *cursor -= (0, 1),
                 KeyCode::Down => *cursor += (0, 1),
-                KeyCode::Char('a') | KeyCode::Char('A') => ship_rot = ShipRotation::Left,
-                KeyCode::Char('d') | KeyCode::Char('D') => ship_rot = ShipRotation::Right,
-                KeyCode::Char('w') | KeyCode::Char('W') => ship_rot = ShipRotation::Up,
-                KeyCode::Char('s') | KeyCode::Char('S') => ship_rot = ShipRotation::Down,
+                KeyCode::Char('A' | 'a') => ship_rot = ShipRotation::Left,
+                KeyCode::Char('D' | 'd') => ship_rot = ShipRotation::Right,
+                KeyCode::Char('W' | 'w') => ship_rot = ShipRotation::Up,
+                KeyCode::Char('S' | 's') => ship_rot = ShipRotation::Down,
                 KeyCode::Char(' ') | KeyCode::Enter => {
-                    if board.ships.is_valid() && ship.next() {
+                    if ships.is_valid() && ship.next() {
                         break;
                     }
                     last_action_was_place = true;
@@ -175,38 +175,38 @@ fn do_place(
             }
         }
         match ship {
-            ShipType::AircraftCarrier => board.ships.carrier(ShipState::new(
+            ShipType::AircraftCarrier => ships.carrier(ShipState::new(
                 *cursor,
                 ship_rot,
                 false,
                 ShipType::AircraftCarrier,
             )),
-            ShipType::Battleship => board.ships.battleship(ShipState::new(
+            ShipType::Battleship => ships.battleship(ShipState::new(
                 *cursor,
                 ship_rot,
                 false,
                 ShipType::Battleship,
             )),
-            ShipType::Destroyer => board.ships.destroyer(ShipState::new(
+            ShipType::Destroyer => ships.destroyer(ShipState::new(
                 *cursor,
                 ship_rot,
                 false,
                 ShipType::Destroyer,
             )),
-            ShipType::Submarine => board.ships.submarine(ShipState::new(
+            ShipType::Submarine => ships.submarine(ShipState::new(
                 *cursor,
                 ship_rot,
                 false,
                 ShipType::Submarine,
             )),
-            ShipType::PatrolBoat => board.ships.patrol(ShipState::new(
+            ShipType::PatrolBoat => ships.patrol(ShipState::new(
                 *cursor,
                 ship_rot,
                 false,
                 ShipType::PatrolBoat,
             )),
         }
-        if !board.ships.is_valid() && !last_action_was_place {
+        if !ships.is_valid() && !last_action_was_place {
             message = "Invalid board layout".to_string();
         }
         render_screen(stdout, &mut board, &mut Board::new(), cursor, "", &message)?;
@@ -261,7 +261,7 @@ fn draw_board(
         for y in 0..10 {
             queue!(stdout, MoveTo((x + 1) * 3 - 1 + x_offset, y + 1))?;
             let cell = Cell::new(x.into(), y.into());
-            let on_color = if show_ships && board.contains_ship(&cell) {
+            let on_color = if show_ships && board.ships.(&cell) {
                 Stylize::on_grey
             } else {
                 Stylize::on_blue

@@ -1,4 +1,7 @@
-use crate::{cell::Cell, ship::ShipSet};
+use crate::{
+    cell::Cell,
+    ship::{ShipSet, ShipType},
+};
 
 #[derive(Debug, Clone)]
 pub struct Board {
@@ -19,7 +22,7 @@ impl Board {
             return None;
         }
         let outcome = if self.contains_ship(cell) {
-            Shot::Hit
+            Shot::Hit(cell.ship.unwrap())
         } else {
             Shot::Miss
         };
@@ -45,7 +48,7 @@ type RawBoard = [[Shot; 10]; 10];
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Shot {
-    Hit,
+    Hit(ShipType),
     Miss,
     Empty,
 }

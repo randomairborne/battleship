@@ -65,6 +65,34 @@ impl ShipSet {
         let mut uniq = std::collections::HashSet::new();
         cells.into_iter().all(move |x| uniq.insert(x))
     }
+    pub const fn lost(&self) -> bool {
+        if let Some(ship) = self.carrier {
+            if !ship.sunk {
+                return false;
+            }
+        }
+        if let Some(ship) = self.battleship {
+            if !ship.sunk {
+                return false;
+            }
+        }
+        if let Some(ship) = self.destroyer {
+            if !ship.sunk {
+                return false;
+            }
+        }
+        if let Some(ship) = self.submarine {
+            if !ship.sunk {
+                return false;
+            }
+        }
+        if let Some(ship) = self.patrol {
+            if !ship.sunk {
+                return false;
+            }
+        }
+        true
+    }
     pub fn cell_contains_ship(&self, cell: &Cell) -> bool {
         self.occupied_cells().contains(cell)
     }
@@ -151,7 +179,9 @@ impl ShipState {
                 ShipRotation::Left => (pos_x - i, pos_y),
                 ShipRotation::Right => (pos_x + i, pos_y),
             };
-            occupies.push(Cell::new(cell_x, cell_y));
+            let mut cell = Cell::new(cell_x, cell_y);
+            cell.ship = Some(self.kind);
+            occupies.push(cell);
         }
         occupies
     }
@@ -185,5 +215,18 @@ impl ShipType {
             Self::PatrolBoat => return true,
         };
         false
+    }
+}
+
+impl std::fmt::Display for ShipType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let name = match self {
+            Self::AircraftCarrier => "Aircraft Carrier",
+            Self::Battleship => "Battleship",
+            Self::Destroyer => "Destroyer",
+            Self::Submarine => "Submarine",
+            Self::PatrolBoat => "Patrol Boat",
+        };
+        f.write_str(name)
     }
 }

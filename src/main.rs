@@ -29,21 +29,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }));
     let mut stdout = std::io::stdout();
     let mut cursor = Cell::new(0, 0);
-    let mut p1 = do_place(&mut stdout, &mut cursor, "Player 1: Place your ships")?;
+    let mut p1 = do_place(&mut stdout, &mut cursor, "p1", "Player 1: Place your ships")?;
     show_pass(&mut stdout)?;
-    let mut p2 = do_place(&mut stdout, &mut cursor, "Player 2: Place your ships")?;
+    let mut p2 = do_place(&mut stdout, &mut cursor, "p2", "Player 2: Place your ships")?;
+    let mut winner;
     loop {
-        turn(&mut stdout, &mut p2, &mut cursor)?;
-        turn(&mut stdout, &mut p1, &mut cursor)?;
+        turn(&mut stdout, &mut p1, &mut p2, &mut cursor, "p2")?;
+        if p2.ships.lost() {
+            winner = "Player 1 wins!".to_string();
+            break;
+        }
+        turn(&mut stdout, &mut p2, &mut p1, &mut cursor, "p2")?;
+        if p2.ships.lost() {
+            winner = "Player 2 wins!".to_string();
+            break;
+        }
     }
     crossterm::terminal::disable_raw_mode().ok();
+    // todo: fancy end screen
+    println!("{winner}");
     Ok(())
 }
 
-fn turn(stdout: &mut Stdout, board: &mut Board, cursor: &mut Cell) -> Result<(), Error> {
+fn turn(
+    stdout: &mut Stdout,
+    attacker: &mut Board,
+    defender: &mut Board,
+    cursor: &mut Cell,
+    player: &str,
+) -> Result<(), Error> {
     show_pass(stdout)?;
     let mut msg = String::with_capacity(128);
-    render_board(stdout, board, cursor, false, "")?;
+    render_screen(stdout, attacker, defender, cursor, player, "")?;
     loop {
         if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
             if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
@@ -58,11 +75,11 @@ fn turn(stdout: &mut Stdout, board: &mut Board, cursor: &mut Cell) -> Result<(),
                 KeyCode::Up => *cursor -= (0, 1),
                 KeyCode::Down => *cursor += (0, 1),
                 KeyCode::Char(' ') => {
-                    if let Some(shot) = board.fire(cursor) {
+                    if let Some(shot) = defender.fire(cursor) {
                         msg = match shot {
-                            Shot::Hit => "You hit!",
-                            Shot::Miss => "You missed",
-                            Shot::Empty => "Shot is empty!?",
+                            Shot::Hit(ship) => format!("You hit their {ship}!"),
+                            Shot::Miss => "You missed".to_string(),
+                            Shot::Empty => "Shot is empty!?".to_string(),
                         }
                         .to_string();
                     }
@@ -70,10 +87,10 @@ fn turn(stdout: &mut Stdout, board: &mut Board, cursor: &mut Cell) -> Result<(),
                 }
                 _ => {}
             }
-            render_board(stdout, board, cursor, false, "")?;
+            render_screen(stdout, attacker, defender, cursor, player, "")?;
         }
     }
-    render_board(stdout, board, cursor, false, &msg)?;
+    render_screen(stdout, attacker, defender, cursor, player, &msg)?;
     execute!(stdout, MoveTo(0, 0))?;
     std::thread::sleep(std::time::Duration::from_secs(3));
     Ok(())
@@ -103,7 +120,12 @@ fn show_pass(stdout: &mut Stdout) -> Result<(), Error> {
     Ok(())
 }
 
-fn do_place(stdout: &mut Stdout, cursor: &mut Cell, action: &str) -> Result<Board, Error> {
+fn do_place(
+    stdout: &mut Stdout,
+    cursor: &mut Cell,
+    player: &str,
+    action: &str,
+) -> Result<Board, Error> {
     let mut board = Board::new();
     let mut ship_rot = ShipRotation::Down;
     let mut ship = ShipType::AircraftCarrier;
@@ -115,7 +137,14 @@ fn do_place(stdout: &mut Stdout, cursor: &mut Cell, action: &str) -> Result<Boar
         false,
         ShipType::AircraftCarrier,
     ));
-    render_board(stdout, &mut board, cursor, true, &message)?;
+    render_screen(
+        stdout,
+        &mut board,
+        &mut Board::new(),
+        cursor,
+        player,
+        &message,
+    )?;
     loop {
         if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
             if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
@@ -180,7 +209,7 @@ fn do_place(stdout: &mut Stdout, cursor: &mut Cell, action: &str) -> Result<Boar
         if !board.ships.is_valid() && !last_action_was_place {
             message = "Invalid board layout".to_string();
         }
-        render_board(stdout, &mut board, cursor, true, &message)?;
+        render_screen(stdout, &mut board, &mut Board::new(), cursor, "", &message)?;
         message.clear();
         last_action_was_place = false;
     }
@@ -188,35 +217,59 @@ fn do_place(stdout: &mut Stdout, cursor: &mut Cell, action: &str) -> Result<Boar
     Ok(board)
 }
 
-fn render_board(
+fn render_screen(
     stdout: &mut Stdout,
-    board: &mut Board,
+    attacker: &mut Board,
+    defender: &mut Board,
     cursor: &mut Cell,
-    ships: bool,
+    player: &str,
     message: &str,
 ) -> Result<(), Error> {
     queue!(stdout, Clear(crossterm::terminal::ClearType::All))?;
+    draw_board(stdout, defender, false, 0)?;
+    draw_board(stdout, attacker, true, 40)?;
+    queue!(
+        stdout,
+        MoveTo(0, 0),
+        Print(player),
+        MoveTo(0, 13),
+        Print(message),
+        #[allow(clippy::cast_possible_truncation)]
+        MoveTo(cursor.x() as u16 * 3 + 3, cursor.y() as u16 + 1)
+    )?;
+    stdout.flush()?;
+    Ok(())
+}
+
+fn draw_board(
+    stdout: &mut Stdout,
+    board: &mut Board,
+    show_ships: bool,
+    x_offset: u16,
+) -> Result<(), Error> {
     for x in 1..11 {
-        queue!(stdout, MoveTo(x * 3, 0), Print(x))?;
+        queue!(stdout, MoveTo(x * 3 + x_offset, 0), Print(x))?;
     }
     for y in 1..11 {
         queue!(
             stdout,
-            MoveTo(0, y),
+            MoveTo(x_offset, y),
             Print(char::from_u32('A' as u32 + (u32::from(y) - 1)).unwrap_or('X'))
         )?;
     }
     for x in 0..10 {
         for y in 0..10 {
-            queue!(stdout, MoveTo((x + 1) * 3 - 1, y + 1))?;
+            queue!(stdout, MoveTo((x + 1) * 3 - 1 + x_offset, y + 1))?;
             let cell = Cell::new(x.into(), y.into());
-            let on_color = if ships && board.contains_ship(&cell) {
+            let on_color = if show_ships && board.contains_ship(&cell) {
                 Stylize::on_grey
             } else {
                 Stylize::on_blue
             };
             match board.shot(&cell) {
-                Shot::Hit => queue!(stdout, PrintStyledContent(on_color(" \u{25fe} ").red())),
+                Shot::Hit(_kind) => {
+                    queue!(stdout, PrintStyledContent(on_color(" \u{25fe} ").red()))
+                }
                 Shot::Miss => {
                     queue!(stdout, PrintStyledContent(on_color(" \u{25fe} ").white()))
                 }
@@ -224,14 +277,6 @@ fn render_board(
             }?;
         }
     }
-    queue!(
-        stdout,
-        MoveTo(0, 13),
-        Print(message),
-        #[allow(clippy::cast_possible_truncation)]
-        MoveTo(cursor.x() as u16 * 3 + 3, cursor.y() as u16 + 1)
-    )?;
-    stdout.flush()?;
     Ok(())
 }
 

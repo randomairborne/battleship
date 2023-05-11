@@ -29,10 +29,44 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }));
     let mut stdout = std::io::stdout();
     let mut cursor = Cell::new(0, 0);
-    let _p1 = do_place(&mut stdout, &mut cursor, "Player 1: Place your ships");
+    let mut p1 = do_place(&mut stdout, &mut cursor, "Player 1: Place your ships")?;
     show_pass(&mut stdout)?;
-    let _p2 = do_place(&mut stdout, &mut cursor, "Player 2: Place your ships");
+    let mut p2 = do_place(&mut stdout, &mut cursor, "Player 2: Place your ships")?;
+    loop {
+        turn(&mut stdout, &mut p2, &mut cursor)?;
+        turn(&mut stdout, &mut p1, &mut cursor)?;
+    }
     crossterm::terminal::disable_raw_mode().ok();
+    Ok(())
+}
+
+fn turn(stdout: &mut Stdout, board: &mut Board, cursor: &mut Cell) -> Result<(), Error> {
+    show_pass(stdout)?;
+    render_board(stdout, board, cursor, false, "")?;
+    loop {
+        if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
+            if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
+                exit();
+            }
+            if key.code == KeyCode::Esc {
+                exit();
+            }
+            match key.code {
+                KeyCode::Left => *cursor -= (1, 0),
+                KeyCode::Right => *cursor += (1, 0),
+                KeyCode::Up => *cursor -= (0, 1),
+                KeyCode::Down => *cursor += (0, 1),
+                KeyCode::Char(' ') => {
+                    board.fire(cursor);
+                    break;
+                }
+                _ => {}
+            }
+            render_board(stdout, board, cursor, false, "")?;
+        }
+    }
+    render_board(stdout, board, cursor, false, "")?;
+    std::thread::sleep(std::time::Duration::from_secs(3));
     Ok(())
 }
 
@@ -66,7 +100,7 @@ fn do_place(stdout: &mut Stdout, cursor: &mut Cell, action: &str) -> Result<Boar
         false,
         ShipType::AircraftCarrier,
     ));
-    render_board(stdout, &mut board, cursor, &message)?;
+    render_board(stdout, &mut board, cursor, true, &message)?;
     loop {
         if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
             if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
@@ -134,7 +168,7 @@ fn do_place(stdout: &mut Stdout, cursor: &mut Cell, action: &str) -> Result<Boar
         if !board.ships.is_valid() && !last_action_was_place {
             message.push_str("Invalid board layout");
         }
-        render_board(stdout, &mut board, cursor, &message)?;
+        render_board(stdout, &mut board, cursor, true, &message)?;
         message.clear();
         last_action_was_place = false;
     }
@@ -146,6 +180,7 @@ fn render_board(
     stdout: &mut Stdout,
     board: &mut Board,
     cursor: &mut Cell,
+    ships: bool,
     message: &str,
 ) -> Result<(), Error> {
     queue!(stdout, Clear(crossterm::terminal::ClearType::All))?;
@@ -163,7 +198,7 @@ fn render_board(
         for y in 0..10 {
             queue!(stdout, MoveTo((x + 1) * 3 - 1, y + 1))?;
             let cell = Cell::new(x.into(), y.into());
-            let on_color = if board.contains_ship(&cell) {
+            let on_color = if ships && board.contains_ship(&cell) {
                 Stylize::on_grey
             } else {
                 Stylize::on_blue
@@ -182,7 +217,7 @@ fn render_board(
         MoveTo(0, 13),
         Print(message),
         #[allow(clippy::cast_possible_truncation)]
-        MoveTo(cursor.x() as u16 * 3 + 2, cursor.y() as u16 + 1)
+        MoveTo(cursor.x() as u16 * 3 + 3, cursor.y() as u16 + 1)
     )?;
     stdout.flush()?;
     Ok(())

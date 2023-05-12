@@ -34,21 +34,6 @@ impl ShipSet {
 
         out
     }
-    pub fn carrier(&mut self) -> Rc<ShipState> {
-        self.carrier.clone()
-    }
-    pub fn battleship(&mut self) -> Rc<ShipState> {
-        self.battleship.clone()
-    }
-    pub fn destroyer(&mut self) -> Rc<ShipState> {
-        self.destroyer.clone()
-    }
-    pub fn submarine(&mut self) -> Rc<ShipState> {
-        self.submarine.clone()
-    }
-    pub fn patrol(&mut self) -> Rc<ShipState> {
-        self.patrol.clone()
-    }
 }
 
 type RawShipBoard = [[Option<Rc<ShipState>>; 10]; 10];

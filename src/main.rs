@@ -29,17 +29,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }));
     let mut stdout = std::io::stdout();
     let mut cursor = Cell::new(0, 0);
-    let mut p1 = do_place(&mut stdout, &mut cursor, "1P", "Player 1: Place your ships")?;
-    show_pass(&mut stdout)?;
-    let mut p2 = do_place(&mut stdout, &mut cursor, "2P", "Player 2: Place your ships")?;
+    let mut p1 = do_place(&mut stdout, &mut cursor, 1, "Player 1: Place your ships")?;
+    show_pass(&mut stdout, 2)?;
+    let mut p2 = do_place(&mut stdout, &mut cursor, 2, "Player 2: Place your ships")?;
     let winner;
     loop {
-        turn(&mut stdout, &mut p1, &mut p2, &mut cursor, "1P")?;
+        turn(&mut stdout, &mut p1, &mut p2, &mut cursor, 1)?;
         if p2.lost() {
             winner = "Player 1 wins!".to_string();
             break;
         }
-        turn(&mut stdout, &mut p2, &mut p1, &mut cursor, "2P")?;
+        turn(&mut stdout, &mut p2, &mut p1, &mut cursor, 2)?;
         if p1.lost() {
             winner = "Player 2 wins!".to_string();
             break;
@@ -57,9 +57,9 @@ fn turn(
     attacker: &mut Board,
     defender: &mut Board,
     cursor: &mut Cell,
-    player: &str,
+    player: usize,
 ) -> Result<(), Error> {
-    show_pass(stdout)?;
+    show_pass(stdout, player)?;
     let mut msg = String::with_capacity(128);
     render_screen(stdout, attacker, defender, cursor, player, "")?;
     loop {
@@ -78,8 +78,17 @@ fn turn(
                 KeyCode::Char(' ') => {
                     if let Some(shot) = defender.fire(cursor) {
                         msg = match shot {
-                            Shot::Hit(ship) => format!("You hit their {ship}!"),
-                            Shot::Miss => "You missed".to_string(),
+                            Shot::Hit(ship) => {
+                                let mut verb = "sunk";
+                                for cell in ship.occupies() {
+                                    if !matches!(defender.shot(&cell), Shot::Hit(_ship)) {
+                                        verb = "hit";
+                                        break;
+                                    }
+                                }
+                                format!("You {verb} their {}!", ship.kind())
+                            }
+                            Shot::Miss => "You missed.".to_string(),
                             Shot::Empty => "Shot is empty!?".to_string(),
                         };
                         break;
@@ -98,12 +107,13 @@ fn turn(
     Ok(())
 }
 
-fn show_pass(stdout: &mut Stdout) -> Result<(), Error> {
+fn show_pass(stdout: &mut Stdout, player: usize) -> Result<(), Error> {
     queue!(
         stdout,
         Clear(crossterm::terminal::ClearType::All),
         MoveTo(2, 2),
-        Print("Pass the game to the other player"),
+        Print("Pass the game to player "),
+        Print(player)
     )?;
     stdout.flush()?;
     wait_on_player()?;
@@ -130,7 +140,7 @@ fn wait_on_player() -> Result<(), Error> {
 fn do_place(
     stdout: &mut Stdout,
     cursor: &mut Cell,
-    player: &str,
+    player: usize,
     action: &str,
 ) -> Result<Board, Error> {
     let mut ships = ShipSetBuilder::new();
@@ -201,7 +211,7 @@ fn render_screen(
     attacker: &mut Board,
     defender: &mut Board,
     cursor: &mut Cell,
-    player: &str,
+    player: usize,
     message: &str,
 ) -> Result<(), Error> {
     queue!(stdout, Clear(crossterm::terminal::ClearType::All))?;
@@ -270,7 +280,7 @@ fn draw_board(
 fn draw_ship_picker(
     stdout: &mut Stdout,
     ships: &ShipSetBuilder,
-    player: &str,
+    player: usize,
     message: &str,
     cursor: &Cell,
 ) -> Result<(), Error> {

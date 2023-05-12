@@ -1,7 +1,11 @@
+use std::rc::Rc;
+
 use crate::{
     cell::Cell,
-    ship::{ShipSet, ShipType},
+    ship::{ShipSet, ShipState},
 };
+
+use Shot::Empty;
 
 #[derive(Debug, Clone)]
 pub struct Board {
@@ -13,7 +17,38 @@ impl Board {
     /// If this function errors, then the ship state was invalid
     pub const fn new(ships: ShipSet) -> Self {
         Self {
-            locals: [[Shot::Empty; 10]; 10],
+            locals: [
+                [
+                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                ],
+                [
+                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                ],
+                [
+                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                ],
+                [
+                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                ],
+                [
+                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                ],
+                [
+                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                ],
+                [
+                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                ],
+                [
+                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                ],
+                [
+                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                ],
+                [
+                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
+                ],
+            ],
             ships,
         }
     }
@@ -21,11 +56,8 @@ impl Board {
         if *self.shot_mut(cell) != Shot::Empty {
             return None;
         }
-        let outcome = self
-            .ships
-            .ref_for(*cell)
-            .map_or(Shot::Miss, |shipref| Shot::Hit(shipref.kind()));
-        self.update_cell(cell, outcome);
+        let outcome = self.ships.ref_for(*cell).map_or(Shot::Miss, Shot::Hit);
+        self.update_cell(cell, outcome.clone());
         Some(outcome)
     }
     pub fn lost(&self) -> bool {
@@ -38,8 +70,8 @@ impl Board {
         let shot = self.shot_mut(cell);
         *shot = value;
     }
-    pub const fn shot(&self, cell: &Cell) -> Shot {
-        self.locals[cell.x()][cell.y()]
+    pub fn shot(&self, cell: &Cell) -> Shot {
+        self.locals[cell.x()][cell.y()].clone()
     }
     fn shot_mut(&mut self, cell: &Cell) -> &mut Shot {
         &mut self.locals[cell.x()][cell.y()]
@@ -48,9 +80,9 @@ impl Board {
 
 pub type RawBoard = [[Shot; 10]; 10];
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum Shot {
-    Hit(ShipType),
+    Hit(Rc<ShipState>),
     Miss,
     Empty,
 }

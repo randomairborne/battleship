@@ -23,6 +23,9 @@ impl<'a> ShipSet<'a> {
             && self.submarine.sunk()
             && self.patrol.sunk()
     }
+    pub fn contains_ship(&self, cell: Cell) -> bool {
+        self.ref_for(cell).is_some()
+    }
 }
 
 type RawShipBoard<'a> = [[Option<ShipStateRef<'a>>; 10]; 10];
@@ -44,14 +47,33 @@ impl ShipSetBuilder {
         if !self.is_valid() {
             return None;
         }
-        let refs = [[None; 10]; 10];
-        for cell in self.occupied_cells() {}
+        let carrier = self.carrier?;
+        let battleship = self.battleship?;
+        let destroyer = self.destroyer?;
+        let submarine = self.submarine?;
+        let patrol = self.patrol?;
+        let mut refs = [[None; 10]; 10];
+        for cell in carrier.occupies() {
+            refs[cell.x()][cell.y()] = Some(ShipStateRef::new(carrier));
+        }
+        for cell in battleship.occupies() {
+            refs[cell.x()][cell.y()] = Some(ShipStateRef::new(battleship));
+        }
+        for cell in destroyer.occupies() {
+            refs[cell.x()][cell.y()] = Some(ShipStateRef::new(destroyer));
+        }
+        for cell in submarine.occupies() {
+            refs[cell.x()][cell.y()] = Some(ShipStateRef::new(submarine));
+        }
+        for cell in patrol.occupies() {
+            refs[cell.x()][cell.y()] = Some(ShipStateRef::new(patrol));
+        }
         Some(ShipSet {
-            carrier: self.carrier?,
-            battleship: self.battleship?,
-            destroyer: self.destroyer?,
-            submarine: self.submarine?,
-            patrol: self.patrol?,
+            carrier,
+            battleship,
+            destroyer,
+            submarine,
+            patrol,
             refs,
         })
     }
@@ -107,6 +129,9 @@ impl ShipSetBuilder {
         let cells = self.occupied_cells();
         let mut uniq = std::collections::HashSet::new();
         cells.into_iter().all(move |x| uniq.insert(x))
+    }
+    pub fn contains_ship(&self, cell: Cell) -> bool {
+        self.occupied_cells().contains(&cell)
     }
     pub fn carrier(&mut self, ship: ShipState) {
         self.carrier = Some(ship);

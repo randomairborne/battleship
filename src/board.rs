@@ -11,7 +11,7 @@ pub struct Board<'a> {
 
 impl<'a> Board<'a> {
     /// If this function errors, then the ship state was invalid
-    pub fn new(ships: ShipSet) -> Self {
+    pub fn new(ships: ShipSet<'a>) -> Self {
         Self {
             locals: [[Shot::Empty; 10]; 10],
             ships,

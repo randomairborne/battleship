@@ -17,7 +17,7 @@ use crossterm::{
     style::{Print, PrintStyledContent, Stylize},
     terminal::Clear,
 };
-use ship::{ShipRotation, ShipState, ShipType, ShipSetBuilder};
+use ship::{ShipRotation, ShipSetBuilder, ShipState, ShipType};
 
 pub use error::Error;
 
@@ -137,14 +137,7 @@ fn do_place<'a>(
         false,
         ShipType::AircraftCarrier,
     ));
-    render_screen(
-        stdout,
-        &mut Board::new(),
-        &mut Board::new(),
-        cursor,
-        player,
-        &message,
-    )?;
+    draw_ship_picker(stdout, &ships);
     loop {
         if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
             if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
@@ -167,7 +160,11 @@ fn do_place<'a>(
                 KeyCode::Char('S' | 's') => ship_rot = ShipRotation::Down,
                 KeyCode::Char(' ') | KeyCode::Enter => {
                     if ships.is_valid() && ship.next() {
-                        break;
+                        if let Some(finished) = ships.build() {
+                            *cursor = Cell::new(0, 0);
+                            return Ok(Board::new(finished));
+                        }
+                        message = "Board is valid but is invalid!?".to_string();
                     }
                     last_action_was_place = true;
                 }
@@ -209,12 +206,10 @@ fn do_place<'a>(
         if !ships.is_valid() && !last_action_was_place {
             message = "Invalid board layout".to_string();
         }
-        render_screen(stdout, &mut board, &mut Board::new(), cursor, "", &message)?;
+        draw_ship_picker(stdout, &ships);
         message.clear();
         last_action_was_place = false;
     }
-    *cursor = Cell::new(0, 0);
-    Ok(board)
 }
 
 fn render_screen(
@@ -261,7 +256,7 @@ fn draw_board(
         for y in 0..10 {
             queue!(stdout, MoveTo((x + 1) * 3 - 1 + x_offset, y + 1))?;
             let cell = Cell::new(x.into(), y.into());
-            let on_color = if show_ships && board.ships.(&cell) {
+            let on_color = if show_ships && board.ships.contains_ship(cell) {
                 Stylize::on_grey
             } else {
                 Stylize::on_blue
@@ -275,6 +270,32 @@ fn draw_board(
                 }
                 Shot::Empty => queue!(stdout, PrintStyledContent(on_color("   "))),
             }?;
+        }
+    }
+    Ok(())
+}
+
+fn draw_ship_picker(stdout: &mut Stdout, ships: &ShipSetBuilder) -> Result<(), Error> {
+    for x in 1..11 {
+        queue!(stdout, MoveTo(x * 3, 0), Print(x))?;
+    }
+    for y in 1..11 {
+        queue!(
+            stdout,
+            MoveTo(0, y),
+            Print(char::from_u32('A' as u32 + (u32::from(y) - 1)).unwrap_or('X'))
+        )?;
+    }
+    for x in 0..10 {
+        for y in 0..10 {
+            queue!(stdout, MoveTo((x + 1) * 3 - 1, y + 1))?;
+            let cell = Cell::new(x.into(), y.into());
+            let on_color = if ships.contains_ship(cell) {
+                Stylize::on_grey
+            } else {
+                Stylize::on_blue
+            };
+            queue!(stdout, PrintStyledContent(on_color(" ")))?;
         }
     }
     Ok(())

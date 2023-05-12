@@ -18,15 +18,36 @@ impl ShipSet {
     pub fn ref_for(&self, cell: Cell) -> Option<Rc<ShipState>> {
         self.refs[cell.x()][cell.y()].clone()
     }
-    pub fn lost(&self) -> bool {
-        self.carrier.sunk()
-            && self.battleship.sunk()
-            && self.destroyer.sunk()
-            && self.submarine.sunk()
-            && self.patrol.sunk()
-    }
     pub fn contains_ship(&self, cell: Cell) -> bool {
         self.ref_for(cell).is_some()
+    }
+    pub fn occupied_cells(&self) -> Vec<Cell> {
+        // 17 is the max number of cells we could take up
+        // this hyper-optimizes allocations
+        // because *that's* the expensive operation here
+        let mut out: Vec<Cell> = Vec::with_capacity(17);
+        out.append(&mut self.carrier.occupies());
+        out.append(&mut self.battleship.occupies());
+        out.append(&mut self.destroyer.occupies());
+        out.append(&mut self.submarine.occupies());
+        out.append(&mut self.patrol.occupies());
+
+        out
+    }
+    pub fn carrier(&mut self) -> Rc<ShipState> {
+        self.carrier.clone()
+    }
+    pub fn battleship(&mut self) -> Rc<ShipState> {
+        self.battleship.clone()
+    }
+    pub fn destroyer(&mut self) -> Rc<ShipState> {
+        self.destroyer.clone()
+    }
+    pub fn submarine(&mut self) -> Rc<ShipState> {
+        self.submarine.clone()
+    }
+    pub fn patrol(&mut self) -> Rc<ShipState> {
+        self.patrol.clone()
     }
 }
 
@@ -91,7 +112,6 @@ impl ShipSetBuilder {
             refs,
         })
     }
-
     pub fn occupied_cells(&self) -> Vec<Cell> {
         // 17 is the max number of cells we could take up
         // this hyper-optimizes allocations

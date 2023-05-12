@@ -35,16 +35,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let winner;
     loop {
         turn(&mut stdout, &mut p1, &mut p2, &mut cursor, "1P")?;
-        if p2.ships.lost() {
+        if p2.lost() {
             winner = "Player 1 wins!".to_string();
             break;
         }
         turn(&mut stdout, &mut p2, &mut p1, &mut cursor, "2P")?;
-        if p2.ships.lost() {
+        if p1.lost() {
             winner = "Player 2 wins!".to_string();
             break;
         }
     }
+    execute!(stdout, Clear(crossterm::terminal::ClearType::All))?;
     crossterm::terminal::disable_raw_mode().ok();
     // todo: fancy end screen
     println!("{winner}");
@@ -137,12 +138,7 @@ fn do_place(
     let mut ship = ShipType::AircraftCarrier;
     let mut last_action_was_place = false;
     let mut message = action.to_string();
-    ships.carrier(ShipState::new(
-        *cursor,
-        ship_rot,
-        false,
-        ShipType::AircraftCarrier,
-    ));
+    ships.carrier(ShipState::new(*cursor, ship_rot, ShipType::AircraftCarrier));
     draw_ship_picker(stdout, &ships, player, &message, cursor)?;
     loop {
         if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
@@ -175,36 +171,21 @@ fn do_place(
             }
         }
         match ship {
-            ShipType::AircraftCarrier => ships.carrier(ShipState::new(
-                *cursor,
-                ship_rot,
-                false,
-                ShipType::AircraftCarrier,
-            )),
-            ShipType::Battleship => ships.battleship(ShipState::new(
-                *cursor,
-                ship_rot,
-                false,
-                ShipType::Battleship,
-            )),
-            ShipType::Destroyer => ships.destroyer(ShipState::new(
-                *cursor,
-                ship_rot,
-                false,
-                ShipType::Destroyer,
-            )),
-            ShipType::Submarine => ships.submarine(ShipState::new(
-                *cursor,
-                ship_rot,
-                false,
-                ShipType::Submarine,
-            )),
-            ShipType::PatrolBoat => ships.patrol(ShipState::new(
-                *cursor,
-                ship_rot,
-                false,
-                ShipType::PatrolBoat,
-            )),
+            ShipType::AircraftCarrier => {
+                ships.carrier(ShipState::new(*cursor, ship_rot, ShipType::AircraftCarrier));
+            }
+            ShipType::Battleship => {
+                ships.battleship(ShipState::new(*cursor, ship_rot, ShipType::Battleship));
+            }
+            ShipType::Destroyer => {
+                ships.destroyer(ShipState::new(*cursor, ship_rot, ShipType::Destroyer));
+            }
+            ShipType::Submarine => {
+                ships.submarine(ShipState::new(*cursor, ship_rot, ShipType::Submarine));
+            }
+            ShipType::PatrolBoat => {
+                ships.patrol(ShipState::new(*cursor, ship_rot, ShipType::PatrolBoat));
+            }
         }
         if !ships.is_valid() && !last_action_was_place {
             message = "Invalid board layout".to_string();

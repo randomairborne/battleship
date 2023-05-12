@@ -28,6 +28,12 @@ impl Board {
         self.update_cell(cell, outcome);
         Some(outcome)
     }
+    pub fn lost(&self) -> bool {
+        self.ships
+            .occupied_cells()
+            .iter()
+            .all(|v| matches!(self.shot(v), Shot::Hit(_ship)))
+    }
     fn update_cell(&mut self, cell: &Cell, value: Shot) {
         let shot = self.shot_mut(cell);
         *shot = value;

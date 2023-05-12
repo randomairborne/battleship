@@ -6,21 +6,12 @@ use super::{ShipRotation, ShipType};
 pub struct ShipState {
     rot: ShipRotation,
     pos: Cell,
-    sunk: bool,
     kind: ShipType,
 }
 
 impl ShipState {
-    pub const fn new(pos: Cell, rot: ShipRotation, sunk: bool, kind: ShipType) -> Self {
-        Self {
-            rot,
-            pos,
-            sunk,
-            kind,
-        }
-    }
-    pub const fn sunk(&self) -> bool {
-        self.sunk
+    pub const fn new(pos: Cell, rot: ShipRotation, kind: ShipType) -> Self {
+        Self { rot, pos, kind }
     }
     pub const fn kind(&self) -> ShipType {
         self.kind

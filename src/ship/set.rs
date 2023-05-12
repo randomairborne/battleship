@@ -1,20 +1,22 @@
+use std::rc::Rc;
+
 use crate::cell::Cell;
 
-use super::{ShipState, ShipStateRef};
+use super::ShipState;
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct ShipSet<'a> {
-    carrier: ShipState,
-    battleship: ShipState,
-    destroyer: ShipState,
-    submarine: ShipState,
-    patrol: ShipState,
-    refs: RawShipBoard<'a>,
+#[derive(Clone, PartialEq, Eq, Hash, Debug)]
+pub struct ShipSet {
+    carrier: Rc<ShipState>,
+    battleship: Rc<ShipState>,
+    destroyer: Rc<ShipState>,
+    submarine: Rc<ShipState>,
+    patrol: Rc<ShipState>,
+    refs: RawShipBoard,
 }
 
-impl<'a> ShipSet<'a> {
-    pub fn ref_for(&'a self, cell: Cell) -> Option<ShipStateRef<'a>> {
-        self.refs[cell.x()][cell.y()]
+impl ShipSet {
+    pub fn ref_for(&self, cell: Cell) -> Option<Rc<ShipState>> {
+        self.refs[cell.x()][cell.y()].clone()
     }
     pub fn lost(&self) -> bool {
         self.carrier.sunk()
@@ -28,7 +30,7 @@ impl<'a> ShipSet<'a> {
     }
 }
 
-type RawShipBoard<'a> = [[Option<ShipStateRef<'a>>; 10]; 10];
+type RawShipBoard = [[Option<Rc<ShipState>>; 10]; 10];
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
 pub struct ShipSetBuilder {
@@ -47,26 +49,38 @@ impl ShipSetBuilder {
         if !self.is_valid() {
             return None;
         }
-        let carrier = self.carrier?;
-        let battleship = self.battleship?;
-        let destroyer = self.destroyer?;
-        let submarine = self.submarine?;
-        let patrol = self.patrol?;
-        let mut refs = [[None; 10]; 10];
+        let carrier = Rc::new(self.carrier?);
+        let battleship = Rc::new(self.battleship?);
+        let destroyer = Rc::new(self.destroyer?);
+        let submarine = Rc::new(self.submarine?);
+        let patrol = Rc::new(self.patrol?);
+        // thank you, copy requirement for [None; 10]
+        let mut refs: [[Option<Rc<ShipState>>; 10]; 10] = [
+            [None, None, None, None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None, None, None, None],
+            [None, None, None, None, None, None, None, None, None, None],
+        ];
         for cell in carrier.occupies() {
-            refs[cell.x()][cell.y()] = Some(ShipStateRef::new(carrier));
+            refs[cell.x()][cell.y()] = Some(carrier.clone());
         }
         for cell in battleship.occupies() {
-            refs[cell.x()][cell.y()] = Some(ShipStateRef::new(battleship));
+            refs[cell.x()][cell.y()] = Some(battleship.clone());
         }
         for cell in destroyer.occupies() {
-            refs[cell.x()][cell.y()] = Some(ShipStateRef::new(destroyer));
+            refs[cell.x()][cell.y()] = Some(destroyer.clone());
         }
         for cell in submarine.occupies() {
-            refs[cell.x()][cell.y()] = Some(ShipStateRef::new(submarine));
+            refs[cell.x()][cell.y()] = Some(submarine.clone());
         }
         for cell in patrol.occupies() {
-            refs[cell.x()][cell.y()] = Some(ShipStateRef::new(patrol));
+            refs[cell.x()][cell.y()] = Some(patrol.clone());
         }
         Some(ShipSet {
             carrier,

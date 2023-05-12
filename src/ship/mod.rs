@@ -2,7 +2,7 @@ mod set;
 mod state;
 
 pub use set::{ShipSet, ShipSetBuilder};
-pub use state::{ShipState, ShipStateRef};
+pub use state::ShipState;
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum ShipRotation {

@@ -78,23 +78,3 @@ impl ShipState {
         occupies
     }
 }
-
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
-pub struct ShipStateRef<'a> {
-    referenced: &'a ShipState,
-}
-
-impl<'a> ShipStateRef<'a> {
-    pub fn new(ship_state: ShipState) -> Self {
-        Self {
-            referenced: &ship_state,
-        }
-    }
-}
-
-impl<'a> std::ops::Deref for ShipStateRef<'a> {
-    type Target = ShipState;
-    fn deref(&self) -> &Self::Target {
-        self.referenced
-    }
-}

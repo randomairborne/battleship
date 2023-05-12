@@ -4,14 +4,14 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct Board<'a> {
+pub struct Board {
     locals: RawBoard,
-    pub ships: ShipSet<'a>,
+    pub ships: ShipSet,
 }
 
-impl<'a> Board<'a> {
+impl Board {
     /// If this function errors, then the ship state was invalid
-    pub fn new(ships: ShipSet<'a>) -> Self {
+    pub const fn new(ships: ShipSet) -> Self {
         Self {
             locals: [[Shot::Empty; 10]; 10],
             ships,
@@ -22,11 +22,10 @@ impl<'a> Board<'a> {
             return None;
         }
 
-        let outcome = if let Some(shipref) = self.ships.ref_for(*cell) {
-            Shot::Hit(shipref.kind())
-        } else {
-            Shot::Miss
-        };
+        let outcome = self
+            .ships
+            .ref_for(*cell)
+            .map_or(Shot::Miss, |shipref| Shot::Hit(shipref.kind()));
         self.update_cell(cell, outcome);
         Some(outcome)
     }

@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut p1 = do_place(&mut stdout, &mut cursor, "p1", "Player 1: Place your ships")?;
     show_pass(&mut stdout)?;
     let mut p2 = do_place(&mut stdout, &mut cursor, "p2", "Player 2: Place your ships")?;
-    let mut winner;
+    let winner;
     loop {
         turn(&mut stdout, &mut p1, &mut p2, &mut cursor, "p2")?;
         if p2.ships.lost() {
@@ -80,8 +80,7 @@ fn turn(
                             Shot::Hit(ship) => format!("You hit their {ship}!"),
                             Shot::Miss => "You missed".to_string(),
                             Shot::Empty => "Shot is empty!?".to_string(),
-                        }
-                        .to_string();
+                        };
                     }
                     break;
                 }
@@ -120,12 +119,12 @@ fn show_pass(stdout: &mut Stdout) -> Result<(), Error> {
     Ok(())
 }
 
-fn do_place<'a>(
-    stdout: &'a mut Stdout,
-    cursor: &'a mut Cell,
-    player: &'a str,
-    action: &'a str,
-) -> Result<Board<'a>, Error> {
+fn do_place(
+    stdout: &mut Stdout,
+    cursor: &mut Cell,
+    player: &str,
+    action: &str,
+) -> Result<Board, Error> {
     let mut ships = ShipSetBuilder::new();
     let mut ship_rot = ShipRotation::Down;
     let mut ship = ShipType::AircraftCarrier;
@@ -137,7 +136,7 @@ fn do_place<'a>(
         false,
         ShipType::AircraftCarrier,
     ));
-    draw_ship_picker(stdout, &ships);
+    draw_ship_picker(stdout, &ships, &message, cursor)?;
     loop {
         if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
             if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
@@ -145,9 +144,6 @@ fn do_place<'a>(
             }
             if key.code == KeyCode::Esc {
                 exit();
-            }
-            match key.code {
-                _ => {}
             }
             match key.code {
                 KeyCode::Left => *cursor -= (1, 0),
@@ -165,6 +161,8 @@ fn do_place<'a>(
                             return Ok(Board::new(finished));
                         }
                         message = "Board is valid but is invalid!?".to_string();
+                    } else {
+                        message = "Ship placements were invalid!".to_string();
                     }
                     last_action_was_place = true;
                 }
@@ -206,7 +204,7 @@ fn do_place<'a>(
         if !ships.is_valid() && !last_action_was_place {
             message = "Invalid board layout".to_string();
         }
-        draw_ship_picker(stdout, &ships);
+        draw_ship_picker(stdout, &ships, &message, cursor)?;
         message.clear();
         last_action_was_place = false;
     }
@@ -275,7 +273,13 @@ fn draw_board(
     Ok(())
 }
 
-fn draw_ship_picker(stdout: &mut Stdout, ships: &ShipSetBuilder) -> Result<(), Error> {
+fn draw_ship_picker(
+    stdout: &mut Stdout,
+    ships: &ShipSetBuilder,
+    message: &str,
+    cursor: &Cell,
+) -> Result<(), Error> {
+    queue!(stdout, Clear(crossterm::terminal::ClearType::All))?;
     for x in 1..11 {
         queue!(stdout, MoveTo(x * 3, 0), Print(x))?;
     }
@@ -288,16 +292,24 @@ fn draw_ship_picker(stdout: &mut Stdout, ships: &ShipSetBuilder) -> Result<(), E
     }
     for x in 0..10 {
         for y in 0..10 {
-            queue!(stdout, MoveTo((x + 1) * 3 - 1, y + 1))?;
             let cell = Cell::new(x.into(), y.into());
-            let on_color = if ships.contains_ship(cell) {
+            let contains = ships.contains_ship(cell);
+            let on_color = if contains {
                 Stylize::on_grey
             } else {
                 Stylize::on_blue
             };
-            queue!(stdout, PrintStyledContent(on_color(" ")))?;
+            queue!(stdout, MoveTo((x + 1) * 3 - 1, y + 1), PrintStyledContent(on_color("   ")))?;
         }
     }
+    queue!(
+        stdout,
+        MoveTo(0, 13),
+        Print(message),
+        #[allow(clippy::cast_possible_truncation)]
+        MoveTo(cursor.x() as u16 * 3 + 3, cursor.y() as u16 + 1)
+    )?;
+    stdout.flush()?;
     Ok(())
 }
 

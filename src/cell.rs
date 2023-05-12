@@ -1,12 +1,9 @@
 use std::ops::{AddAssign, SubAssign};
 
-use crate::ship::ShipType;
-
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub struct Cell {
     x: usize,
     y: usize,
-    pub ship: Option<ShipType>,
 }
 
 impl Cell {
@@ -17,7 +14,7 @@ impl Cell {
         if y >= 10 {
             y -= 10;
         }
-        Self { x, y, ship: None }
+        Self { x, y }
     }
     pub const fn x(&self) -> usize {
         self.x

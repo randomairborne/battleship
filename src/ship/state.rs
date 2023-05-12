@@ -19,12 +19,6 @@ impl ShipState {
             kind,
         }
     }
-    pub const fn rot(&self) -> ShipRotation {
-        self.rot
-    }
-    pub const fn pos(&self) -> Cell {
-        self.pos
-    }
     pub const fn sunk(&self) -> bool {
         self.sunk
     }
@@ -71,9 +65,7 @@ impl ShipState {
                 ShipRotation::Left => (pos_x - i, pos_y),
                 ShipRotation::Right => (pos_x + i, pos_y),
             };
-            let mut cell = Cell::new(cell_x, cell_y);
-            cell.ship = Some(self.kind);
-            occupies.push(cell);
+            occupies.push(Cell::new(cell_x, cell_y));
         }
         occupies
     }

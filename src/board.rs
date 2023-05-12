@@ -21,7 +21,6 @@ impl Board {
         if *self.shot_mut(cell) != Shot::Empty {
             return None;
         }
-
         let outcome = self
             .ships
             .ref_for(*cell)

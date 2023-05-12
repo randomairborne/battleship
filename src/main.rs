@@ -29,17 +29,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }));
     let mut stdout = std::io::stdout();
     let mut cursor = Cell::new(0, 0);
-    let mut p1 = do_place(&mut stdout, &mut cursor, "P1", "Player 1: Place your ships")?;
+    let mut p1 = do_place(&mut stdout, &mut cursor, "1P", "Player 1: Place your ships")?;
     show_pass(&mut stdout)?;
-    let mut p2 = do_place(&mut stdout, &mut cursor, "P2", "Player 2: Place your ships")?;
+    let mut p2 = do_place(&mut stdout, &mut cursor, "2P", "Player 2: Place your ships")?;
     let winner;
     loop {
-        turn(&mut stdout, &mut p1, &mut p2, &mut cursor, "p1")?;
+        turn(&mut stdout, &mut p1, &mut p2, &mut cursor, "1P")?;
         if p2.ships.lost() {
             winner = "Player 1 wins!".to_string();
             break;
         }
-        turn(&mut stdout, &mut p2, &mut p1, &mut cursor, "p2")?;
+        turn(&mut stdout, &mut p2, &mut p1, &mut cursor, "2P")?;
         if p2.ships.lost() {
             winner = "Player 2 wins!".to_string();
             break;
@@ -225,7 +225,7 @@ fn render_screen(
 ) -> Result<(), Error> {
     queue!(stdout, Clear(crossterm::terminal::ClearType::All))?;
     draw_board(stdout, defender, false, 0)?;
-    draw_board(stdout, attacker, true, 40)?;
+    draw_board(stdout, attacker, true, 30)?;
     queue!(
         stdout,
         MoveTo(0, 0),
@@ -233,13 +233,13 @@ fn render_screen(
         MoveTo(0, 13),
         Print(message),
         #[allow(clippy::cast_possible_truncation)]
-        MoveTo(cursor.x() as u16 * 3 + 3, cursor.y() as u16 + 1)
+        MoveTo(cursor.x() as u16 * 2 + 2, cursor.y() as u16 + 1)
     )?;
     stdout.flush()?;
     Ok(())
 }
 
-const HIT_STR: &str = " X ";
+const HIT_STR: &str = "><";
 
 fn draw_board(
     stdout: &mut Stdout,
@@ -248,7 +248,7 @@ fn draw_board(
     x_offset: u16,
 ) -> Result<(), Error> {
     for x in 1..11 {
-        queue!(stdout, MoveTo(x * 3 + x_offset, 0), Print(x))?;
+        queue!(stdout, MoveTo(x * 2 + x_offset, 0), Print(x))?;
     }
     for y in 1..11 {
         queue!(
@@ -259,7 +259,7 @@ fn draw_board(
     }
     for x in 0..10 {
         for y in 0..10 {
-            queue!(stdout, MoveTo((x + 1) * 3 - 1 + x_offset, y + 1))?;
+            queue!(stdout, MoveTo((x + 1) * 2 - 1 + x_offset, y + 1))?;
             let cell = Cell::new(x.into(), y.into());
             let bg_color = if show_ships && board.ships.contains_ship(cell) {
                 Color::Grey
@@ -279,7 +279,7 @@ fn draw_board(
                         PrintStyledContent(HIT_STR.with(Color::White).on(bg_color))
                     )
                 }
-                Shot::Empty => queue!(stdout, PrintStyledContent("   ".on(bg_color))),
+                Shot::Empty => queue!(stdout, PrintStyledContent("  ".on(bg_color))),
             }?;
         }
     }
@@ -295,7 +295,7 @@ fn draw_ship_picker(
 ) -> Result<(), Error> {
     queue!(stdout, Clear(crossterm::terminal::ClearType::All))?;
     for x in 1..11 {
-        queue!(stdout, MoveTo(x * 3, 0), Print(x))?;
+        queue!(stdout, MoveTo(x * 2, 0), Print(x))?;
     }
     for y in 1..11 {
         queue!(
@@ -314,8 +314,8 @@ fn draw_ship_picker(
             };
             queue!(
                 stdout,
-                MoveTo((x + 1) * 3 - 1, y + 1),
-                PrintStyledContent(on_color("   "))
+                MoveTo((x + 1) * 2 - 1, y + 1),
+                PrintStyledContent(on_color("  "))
             )?;
         }
     }
@@ -326,7 +326,7 @@ fn draw_ship_picker(
         MoveTo(0, 0),
         Print(player),
         #[allow(clippy::cast_possible_truncation)]
-        MoveTo(cursor.x() as u16 * 3 + 3, cursor.y() as u16 + 1)
+        MoveTo(cursor.x() as u16 * 2 + 2, cursor.y() as u16 + 1)
     )?;
     stdout.flush()?;
     Ok(())

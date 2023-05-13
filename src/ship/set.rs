@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::cell::Cell;
 
@@ -6,16 +6,16 @@ use super::ShipState;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ShipSet {
-    carrier: Rc<ShipState>,
-    battleship: Rc<ShipState>,
-    destroyer: Rc<ShipState>,
-    submarine: Rc<ShipState>,
-    patrol: Rc<ShipState>,
+    carrier: Arc<ShipState>,
+    battleship: Arc<ShipState>,
+    destroyer: Arc<ShipState>,
+    submarine: Arc<ShipState>,
+    patrol: Arc<ShipState>,
     refs: RawShipBoard,
 }
 
 impl ShipSet {
-    pub fn ref_for(&self, cell: Cell) -> Option<Rc<ShipState>> {
+    pub fn ref_for(&self, cell: Cell) -> Option<Arc<ShipState>> {
         self.refs[cell.x()][cell.y()].clone()
     }
     pub fn contains_ship(&self, cell: Cell) -> bool {
@@ -36,7 +36,7 @@ impl ShipSet {
     }
 }
 
-type RawShipBoard = [[Option<Rc<ShipState>>; 10]; 10];
+type RawShipBoard = [[Option<Arc<ShipState>>; 10]; 10];
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
 pub struct ShipSetBuilder {
@@ -55,13 +55,13 @@ impl ShipSetBuilder {
         if !self.is_valid() {
             return None;
         }
-        let carrier = Rc::new(self.carrier?);
-        let battleship = Rc::new(self.battleship?);
-        let destroyer = Rc::new(self.destroyer?);
-        let submarine = Rc::new(self.submarine?);
-        let patrol = Rc::new(self.patrol?);
+        let carrier = Arc::new(self.carrier?);
+        let battleship = Arc::new(self.battleship?);
+        let destroyer = Arc::new(self.destroyer?);
+        let submarine = Arc::new(self.submarine?);
+        let patrol = Arc::new(self.patrol?);
         // thank you, copy requirement for [None; 10]
-        let mut refs: [[Option<Rc<ShipState>>; 10]; 10] = [
+        let mut refs: [[Option<Arc<ShipState>>; 10]; 10] = [
             [None, None, None, None, None, None, None, None, None, None],
             [None, None, None, None, None, None, None, None, None, None],
             [None, None, None, None, None, None, None, None, None, None],

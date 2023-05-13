@@ -8,7 +8,6 @@ use crossterm::{
     event::{KeyCode, KeyModifiers},
     execute, queue,
     style::{Color, Print, PrintStyledContent, Stylize},
-    terminal::Clear,
 };
 
 use super::{exit, wait_on_player};
@@ -55,14 +54,11 @@ pub fn turn(
                     break;
                 }
                 msg = "You already shot there!".to_string();
+                super::clear_msgs(stdout)?;
             }
             _ => {}
         }
-        queue!(
-            stdout,
-            MoveTo(0, 13),
-            Clear(crossterm::terminal::ClearType::CurrentLine)
-        )?;
+        super::clear_msgs(stdout)?;
         render_screen(stdout, attacker, defender, cursor, player, &msg)?;
     }
     render_screen(stdout, attacker, defender, cursor, player, &msg)?;

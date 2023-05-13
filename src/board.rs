@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::{
     cell::Cell,
@@ -82,7 +82,7 @@ pub type RawBoard = [[Shot; 10]; 10];
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub enum Shot {
-    Hit(Rc<ShipState>),
+    Hit(Arc<ShipState>),
     Miss,
     Empty,
 }

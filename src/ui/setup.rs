@@ -51,11 +51,7 @@ pub fn do_place(
                             *cursor = Cell::new(0, 0);
                             return Ok(Board::new(finished));
                         }
-                        queue!(
-                            stdout,
-                            MoveTo(0, 13),
-                            Clear(crossterm::terminal::ClearType::CurrentLine)
-                        )?;
+                        super::clear_msgs(stdout)?;
                         message = "Board is valid but is invalid!?".to_string();
                     }
                     last_action_was_place = true;
@@ -81,11 +77,7 @@ pub fn do_place(
             }
         }
         if !ships.is_valid() && !last_action_was_place {
-            queue!(
-                stdout,
-                MoveTo(0, 13),
-                Clear(crossterm::terminal::ClearType::CurrentLine)
-            )?;
+            super::clear_msgs(stdout)?;
             message = "Invalid board layout".to_string();
         }
         draw_ship_picker(stdout, &ships, player, &message, cursor)?;

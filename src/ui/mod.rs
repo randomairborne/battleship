@@ -5,7 +5,7 @@ pub mod setup;
 use crate::error::Error;
 
 use crossterm::{
-    cursor::MoveTo,
+    cursor::{MoveTo, Show},
     event::{KeyCode, KeyModifiers},
     queue,
     style::Print,
@@ -48,10 +48,20 @@ pub fn exit() -> ! {
         std::io::stdout(),
         Clear(crossterm::terminal::ClearType::All),
         MoveTo(0, 0),
+        Show,
     )
     .ok();
     crossterm::terminal::disable_raw_mode()
         .expect("Failed to disable raw mode - terminal may be corrupted");
     println!("Thanks for playing!");
     std::process::exit(0)
+}
+
+pub fn clear_msgs(out: &mut Stdout) -> Result<(), Error> {
+    queue!(
+        out,
+        MoveTo(0, 11),
+        Clear(crossterm::terminal::ClearType::FromCursorDown)
+    )?;
+    Ok(())
 }

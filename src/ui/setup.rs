@@ -21,8 +21,14 @@ pub fn do_place(
     let mut ship_rot = ShipRotation::Down;
     let mut ship = ShipType::AircraftCarrier;
     let mut last_action_was_place = false;
+    queue!(
+        stdout,
+        MoveTo(0, 13),
+        Clear(crossterm::terminal::ClearType::CurrentLine)
+    )?;
     let mut message = action.to_string();
     ships.carrier(ShipState::new(*cursor, ship_rot, ShipType::AircraftCarrier));
+    execute!(stdout, Clear(crossterm::terminal::ClearType::All))?;
     draw_ship_picker(stdout, &ships, player, &message, cursor)?;
     loop {
         if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
@@ -45,6 +51,11 @@ pub fn do_place(
                             *cursor = Cell::new(0, 0);
                             return Ok(Board::new(finished));
                         }
+                        queue!(
+                            stdout,
+                            MoveTo(0, 13),
+                            Clear(crossterm::terminal::ClearType::CurrentLine)
+                        )?;
                         message = "Board is valid but is invalid!?".to_string();
                     }
                     last_action_was_place = true;
@@ -70,6 +81,11 @@ pub fn do_place(
             }
         }
         if !ships.is_valid() && !last_action_was_place {
+            queue!(
+                stdout,
+                MoveTo(0, 13),
+                Clear(crossterm::terminal::ClearType::CurrentLine)
+            )?;
             message = "Invalid board layout".to_string();
         }
         draw_ship_picker(stdout, &ships, player, &message, cursor)?;
@@ -85,7 +101,6 @@ fn draw_ship_picker(
     message: &str,
     cursor: &Cell,
 ) -> Result<(), Error> {
-    queue!(stdout, Clear(crossterm::terminal::ClearType::All))?;
     for x in 1..11 {
         queue!(stdout, MoveTo(x * 2, 0), Print(x))?;
     }

@@ -24,42 +24,46 @@ pub fn turn(
     let mut msg = String::with_capacity(128);
     render_screen(stdout, attacker, defender, cursor, player, "")?;
     loop {
-        if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
-            if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
-                exit();
-            }
-            if key.code == KeyCode::Esc {
-                exit();
-            }
-            match key.code {
-                KeyCode::Left => *cursor -= (1, 0),
-                KeyCode::Right => *cursor += (1, 0),
-                KeyCode::Up => *cursor -= (0, 1),
-                KeyCode::Down => *cursor += (0, 1),
-                KeyCode::Char(' ') => {
-                    if let Some(shot) = defender.fire(cursor) {
-                        msg = match shot {
-                            Shot::Hit(ship) => {
-                                let mut verb = "sunk";
-                                for cell in ship.occupies() {
-                                    if !matches!(defender.shot(&cell), Shot::Hit(_ship)) {
-                                        verb = "hit";
-                                        break;
-                                    }
-                                }
-                                format!("You {verb} their {}!", ship.kind())
-                            }
-                            Shot::Miss => "You missed.".to_string(),
-                            Shot::Empty => "Shot is empty!?".to_string(),
-                        };
-                        break;
-                    }
-                    msg = "You already shot there!".to_string();
-                }
-                _ => {}
-            }
-            render_screen(stdout, attacker, defender, cursor, player, &msg)?;
+        let key = crate::util::next_key()?;
+        if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
+            exit();
         }
+        if key.code == KeyCode::Esc {
+            exit();
+        }
+        match key.code {
+            KeyCode::Left => *cursor -= (1, 0),
+            KeyCode::Right => *cursor += (1, 0),
+            KeyCode::Up => *cursor -= (0, 1),
+            KeyCode::Down => *cursor += (0, 1),
+            KeyCode::Char(' ') => {
+                if let Some(shot) = defender.fire(cursor) {
+                    msg = match shot {
+                        Shot::Hit(ship) => {
+                            let mut verb = "sunk";
+                            for cell in ship.occupies() {
+                                if !matches!(defender.shot(&cell), Shot::Hit(_ship)) {
+                                    verb = "hit";
+                                    break;
+                                }
+                            }
+                            format!("You {verb} their {}!", ship.kind())
+                        }
+                        Shot::Miss => "You missed.".to_string(),
+                        Shot::Empty => "Shot is empty!?".to_string(),
+                    };
+                    break;
+                }
+                msg = "You already shot there!".to_string();
+            }
+            _ => {}
+        }
+        queue!(
+            stdout,
+            MoveTo(0, 13),
+            Clear(crossterm::terminal::ClearType::CurrentLine)
+        )?;
+        render_screen(stdout, attacker, defender, cursor, player, &msg)?;
     }
     render_screen(stdout, attacker, defender, cursor, player, &msg)?;
     execute!(stdout, MoveTo(0, 0))?;
@@ -76,7 +80,6 @@ pub fn render_screen(
     player: usize,
     message: &str,
 ) -> Result<(), Error> {
-    queue!(stdout, Clear(crossterm::terminal::ClearType::All))?;
     draw_board(stdout, defender, false, 0)?;
     draw_board(stdout, attacker, true, 30)?;
     queue!(

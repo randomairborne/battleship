@@ -5,10 +5,14 @@ mod cell;
 mod error;
 mod ship;
 mod ui;
+mod util;
 
 use cell::Cell;
 
-use crossterm::{execute, terminal::Clear};
+#[macro_use]
+extern crate crossterm;
+
+use crossterm::terminal::{Clear, SetTitle};
 
 pub use error::Error;
 
@@ -19,6 +23,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         eprintln!("{info}");
     }));
     let mut stdout = std::io::stdout();
+    execute!(stdout, SetTitle("Battleship! by valkyrie_pilot"))?;
+    // let play_mode = ui::menu::select_play_mode(&mut stdout)?;
     let mut cursor = Cell::new(0, 0);
     let mut p1 = ui::setup::do_place(&mut stdout, &mut cursor, 1, "Player 1: Place your ships")?;
     ui::show_pass(&mut stdout, 2)?;

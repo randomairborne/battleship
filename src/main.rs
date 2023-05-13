@@ -6,19 +6,9 @@ mod error;
 mod ship;
 mod ui;
 
-use std::io::{Stdout, Write};
-
-use board::{Board, Shot};
 use cell::Cell;
 
-use crossterm::{
-    cursor::MoveTo,
-    event::{KeyCode, KeyModifiers},
-    execute, queue,
-    style::{Color, Print, PrintStyledContent, Stylize},
-    terminal::Clear,
-};
-use ship::{ShipRotation, ShipSetBuilder, ShipState, ShipType};
+use crossterm::{execute, terminal::Clear};
 
 pub use error::Error;
 

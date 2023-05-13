@@ -159,14 +159,12 @@ fn do_place(
                 exit();
             }
             match key.code {
-                KeyCode::Left => *cursor -= (1, 0),
-                KeyCode::Right => *cursor += (1, 0),
-                KeyCode::Up => *cursor -= (0, 1),
-                KeyCode::Down => *cursor += (0, 1),
-                KeyCode::Char('A' | 'a') => ship_rot = ShipRotation::Left,
-                KeyCode::Char('D' | 'd') => ship_rot = ShipRotation::Right,
-                KeyCode::Char('W' | 'w') => ship_rot = ShipRotation::Up,
-                KeyCode::Char('S' | 's') => ship_rot = ShipRotation::Down,
+                KeyCode::Left | KeyCode::Char('A' | 'a') => *cursor -= (1, 0),
+                KeyCode::Right | KeyCode::Char('D' | 'd') => *cursor += (1, 0),
+                KeyCode::Up | KeyCode::Char('W' | 'w') => *cursor -= (0, 1),
+                KeyCode::Down | KeyCode::Char('S' | 's') => *cursor += (0, 1),
+                KeyCode::Char('e' | 'E' | '?' | '/') => ship_rot.next(),
+                KeyCode::Char('q' | 'Q' | '>' | '.') => ship_rot.prev(),
                 KeyCode::Char(' ') | KeyCode::Enter => {
                     if ships.is_valid() && ship.next() {
                         if let Some(finished) = ships.build() {

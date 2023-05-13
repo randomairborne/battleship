@@ -12,6 +12,25 @@ pub enum ShipRotation {
     Right,
 }
 
+impl ShipRotation {
+    pub fn next(&mut self) {
+        *self = match self {
+            Self::Up => Self::Right,
+            Self::Right => Self::Down,
+            Self::Down => Self::Left,
+            Self::Left => Self::Up,
+        };
+    }
+    pub fn prev(&mut self) {
+        *self = match self {
+            Self::Up => Self::Left,
+            Self::Right => Self::Up,
+            Self::Down => Self::Right,
+            Self::Left => Self::Down,
+        };
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum ShipType {
     AircraftCarrier,

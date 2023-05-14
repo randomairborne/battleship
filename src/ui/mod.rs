@@ -23,6 +23,10 @@ pub fn show_pass(stdout: &mut Stdout, player: usize) -> Result<(), Error> {
     )?;
     stdout.flush()?;
     wait_on_player()?;
+    queue!(
+        stdout,
+        Clear(crossterm::terminal::ClearType::All),
+    )?;
     Ok(())
 }
 

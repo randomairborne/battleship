@@ -79,6 +79,8 @@ pub fn do_place(
         if !ships.is_valid() && !last_action_was_place {
             super::clear_msgs(stdout)?;
             message = "Invalid board layout".to_string();
+        } else if ships.is_valid() {
+            super::clear_msgs(stdout)?;
         }
         draw_ship_picker(stdout, &ships, player, &message, cursor)?;
         message.clear();

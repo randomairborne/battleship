@@ -4,6 +4,7 @@ pub mod setup;
 
 use crate::error::Error;
 
+
 use crossterm::{
     cursor::{MoveTo, Show},
     event::{KeyCode, KeyModifiers},
@@ -23,10 +24,7 @@ pub fn show_pass(stdout: &mut Stdout, player: usize) -> Result<(), Error> {
     )?;
     stdout.flush()?;
     wait_on_player()?;
-    queue!(
-        stdout,
-        Clear(crossterm::terminal::ClearType::All),
-    )?;
+    queue!(stdout, Clear(crossterm::terminal::ClearType::All),)?;
     Ok(())
 }
 
@@ -68,4 +66,10 @@ pub fn clear_msgs(out: &mut Stdout) -> Result<(), Error> {
         Clear(crossterm::terminal::ClearType::FromCursorDown)
     )?;
     Ok(())
+}
+
+#[allow(clippy::missing_const_for_fn)]
+pub fn debounce_sleep() {
+    #[cfg(target_os = "windows")]
+    std::thread::sleep(std::time::Duration::from_millis(10));
 }

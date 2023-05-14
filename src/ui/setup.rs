@@ -31,6 +31,7 @@ pub fn do_place(
     execute!(stdout, Clear(crossterm::terminal::ClearType::All))?;
     draw_ship_picker(stdout, &ships, player, &message, cursor)?;
     loop {
+        super::debounce_sleep();
         if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
             if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
                 super::exit();

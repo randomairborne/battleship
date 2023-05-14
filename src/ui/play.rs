@@ -23,6 +23,7 @@ pub fn turn(
     let mut msg = String::with_capacity(128);
     render_screen(stdout, attacker, defender, cursor, player, "")?;
     loop {
+        super::debounce_sleep();
         let key = crate::util::next_key()?;
         if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('c') {
             exit();

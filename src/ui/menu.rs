@@ -35,8 +35,8 @@ pub fn select_play_mode(stdout: &mut Stdout) -> Result<PlayMode, Error> {
     let mut in_progress;
     match play_mode {
         DatalessPlayMode::Local => return Ok(PlayMode::Local),
-        DatalessPlayMode::Join=> in_progress = "127.0.0.1:9416".to_string(),
-        DatalessPlayMode::Host  => in_progress = "9416".to_string(),
+        DatalessPlayMode::Join => in_progress = "127.0.0.1:9416".to_string(),
+        DatalessPlayMode::Host => in_progress = "9416".to_string(),
     }
     loop {
         queue!(
@@ -93,7 +93,11 @@ pub fn select_play_mode(stdout: &mut Stdout) -> Result<PlayMode, Error> {
     Ok(final_mode)
 }
 
-fn pick_mode(stdout: &mut Stdout, term_width: u16, term_height: u16) -> Result<DatalessPlayMode, Error> {
+fn pick_mode(
+    stdout: &mut Stdout,
+    term_width: u16,
+    term_height: u16,
+) -> Result<DatalessPlayMode, Error> {
     queue!(stdout, Clear(crossterm::terminal::ClearType::All), Hide)?;
     let mut play_mode = DatalessPlayMode::Local;
     loop {

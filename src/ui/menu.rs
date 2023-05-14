@@ -22,15 +22,21 @@ pub enum PlayMode {
     Host(u16),
 }
 
+pub enum DatalessPlayMode {
+    Local,
+    Join,
+    Host,
+}
+
 pub fn select_play_mode(stdout: &mut Stdout) -> Result<PlayMode, Error> {
     let (width, height) = crossterm::terminal::size()?;
     let play_mode = pick_mode(stdout, width, height)?;
     queue!(stdout, Clear(crossterm::terminal::ClearType::All))?;
-    let mut in_progress = String::with_capacity(512);
+    let mut in_progress;
     match play_mode {
-        PlayMode::Local => return Ok(PlayMode::Local),
-        PlayMode::Join(_) => in_progress = "127.0.0.1:9416".to_string(),
-        PlayMode::Host(_) => in_progress = "9416".to_string(),
+        DatalessPlayMode::Local => return Ok(PlayMode::Local),
+        DatalessPlayMode::Join=> in_progress = "127.0.0.1:9416".to_string(),
+        DatalessPlayMode::Host  => in_progress = "9416".to_string(),
     }
     loop {
         queue!(
@@ -45,12 +51,12 @@ pub fn select_play_mode(stdout: &mut Stdout) -> Result<PlayMode, Error> {
             ),
         )?;
         let parse_error = match play_mode {
-            PlayMode::Local => break,
-            PlayMode::Join(_sock_addr) => in_progress
+            DatalessPlayMode::Local => break,
+            DatalessPlayMode::Join => in_progress
                 .parse::<SocketAddr>()
                 .err()
                 .map(|v| format!("Address parse error: {v}")),
-            PlayMode::Host(_port) => in_progress
+            DatalessPlayMode::Host => in_progress
                 .parse::<u16>()
                 .err()
                 .map(|v| format!("Port parse error: {v}")),
@@ -79,29 +85,29 @@ pub fn select_play_mode(stdout: &mut Stdout) -> Result<PlayMode, Error> {
             _ => {}
         };
     }
-    match play_mode {
-        PlayMode::Local => {}
-        PlayMode::Join(mut v) => v = std::net::SocketAddr::from_str(&in_progress)?,
-        PlayMode::Host(mut p) => p = in_progress.parse()?,
-    }
-    Ok(play_mode)
+    let final_mode = match play_mode {
+        DatalessPlayMode::Local => PlayMode::Local,
+        DatalessPlayMode::Join => PlayMode::Join(std::net::SocketAddr::from_str(&in_progress)?),
+        DatalessPlayMode::Host => PlayMode::Host(in_progress.parse()?),
+    };
+    Ok(final_mode)
 }
 
-fn pick_mode(stdout: &mut Stdout, term_width: u16, term_height: u16) -> Result<PlayMode, Error> {
+fn pick_mode(stdout: &mut Stdout, term_width: u16, term_height: u16) -> Result<DatalessPlayMode, Error> {
     queue!(stdout, Clear(crossterm::terminal::ClearType::All), Hide)?;
-    let mut play_mode = PlayMode::Local;
+    let mut play_mode = DatalessPlayMode::Local;
     loop {
-        let pass_n_play = if matches!(play_mode, PlayMode::Local) {
+        let pass_n_play = if matches!(play_mode, DatalessPlayMode::Local) {
             "   Pass 'n Play    ".on_dark_blue().grey()
         } else {
             "   Pass 'n Play    ".on_grey().dark_blue()
         };
-        let join = if matches!(play_mode, PlayMode::Join(_)) {
+        let join = if matches!(play_mode, DatalessPlayMode::Join) {
             " Join network game ".on_dark_blue().grey()
         } else {
             " Join network game ".on_grey().dark_blue()
         };
-        let host = if matches!(play_mode, PlayMode::Host(_)) {
+        let host = if matches!(play_mode, DatalessPlayMode::Host) {
             " Host network game ".on_dark_blue().grey()
         } else {
             " Host network game ".on_grey().dark_blue()
@@ -119,16 +125,16 @@ fn pick_mode(stdout: &mut Stdout, term_width: u16, term_height: u16) -> Result<P
         match crate::util::next_key()?.code {
             KeyCode::Up => {
                 play_mode = match play_mode {
-                    PlayMode::Local => PlayMode::Host(0),
-                    PlayMode::Join(_) => PlayMode::Local,
-                    PlayMode::Host(_) => PlayMode::Join(SocketAddr::from_str("0.0.0.0:0").unwrap()),
+                    DatalessPlayMode::Local => DatalessPlayMode::Host,
+                    DatalessPlayMode::Join => DatalessPlayMode::Local,
+                    DatalessPlayMode::Host => DatalessPlayMode::Join,
                 }
             }
             KeyCode::Down => {
                 play_mode = match play_mode {
-                    PlayMode::Local => PlayMode::Join(SocketAddr::from_str("0.0.0.0:0").unwrap()),
-                    PlayMode::Join(_) => PlayMode::Host(0),
-                    PlayMode::Host(_) => PlayMode::Local,
+                    DatalessPlayMode::Local => DatalessPlayMode::Join,
+                    DatalessPlayMode::Join => DatalessPlayMode::Host,
+                    DatalessPlayMode::Host => DatalessPlayMode::Local,
                 }
             }
             KeyCode::Char(' ') => break,

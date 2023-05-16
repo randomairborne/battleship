@@ -3,9 +3,12 @@
 mod board;
 mod cell;
 mod error;
+mod net;
 mod ship;
 mod ui;
 mod util;
+
+use std::io::Stdout;
 
 use cell::Cell;
 
@@ -26,25 +29,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     execute!(stdout, SetTitle("Battleship! by valkyrie_pilot"))?;
     let play_mode = ui::menu::select_play_mode(&mut stdout)?;
     let mut cursor = Cell::new(0, 0);
-    let mut p1 = ui::setup::do_place(&mut stdout, &mut cursor, 1, "Player 1: Place your ships")?;
-    ui::show_pass(&mut stdout, 2)?;
-    let mut p2 = ui::setup::do_place(&mut stdout, &mut cursor, 2, "Player 2: Place your ships")?;
+    match play_mode {
+        ui::menu::PlayMode::Local => local_play(&mut stdout, &mut cursor),
+        ui::menu::PlayMode::Join(_) => todo!(),
+        ui::menu::PlayMode::Host(_) => todo!(),
+    }?;
+    execute!(stdout, Clear(crossterm::terminal::ClearType::All))?;
+    crossterm::terminal::disable_raw_mode().ok();
+    // todo: fancy end screen
+    Ok(())
+}
+
+fn local_play(stdout: &mut Stdout, cursor: &mut Cell) -> Result<(), Error> {
+    let mut p1 = ui::setup::do_place(stdout, cursor, 1, "Player 1: Place your ships")?;
+    ui::show_pass(stdout, 2)?;
+    let mut p2 = ui::setup::do_place(stdout, cursor, 2, "Player 2: Place your ships")?;
     let winner;
     loop {
-        ui::play::turn(&mut stdout, &mut p1, &mut p2, &mut cursor, 1)?;
+        ui::play::turn(stdout, &mut p1, &mut p2, cursor, 1)?;
         if p2.lost() {
             winner = "Player 1 wins!".to_string();
             break;
         }
-        ui::play::turn(&mut stdout, &mut p2, &mut p1, &mut cursor, 2)?;
+        ui::play::turn(stdout, &mut p2, &mut p1, cursor, 2)?;
         if p1.lost() {
             winner = "Player 2 wins!".to_string();
             break;
         }
     }
-    execute!(stdout, Clear(crossterm::terminal::ClearType::All))?;
-    crossterm::terminal::disable_raw_mode().ok();
-    // todo: fancy end screen
     println!("{winner}");
     Ok(())
 }

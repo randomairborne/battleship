@@ -82,6 +82,7 @@ pub fn select_play_mode(stdout: &mut Stdout) -> Result<PlayMode, Error> {
                 in_progress.pop();
             }
             KeyCode::Esc => exit(),
+            KeyCode::Enter => break,
             _ => {}
         };
     }

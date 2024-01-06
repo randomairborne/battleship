@@ -6,20 +6,20 @@ use super::ShipState;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct ShipSet {
-    carrier: Arc<ShipState>,
-    battleship: Arc<ShipState>,
-    destroyer: Arc<ShipState>,
-    submarine: Arc<ShipState>,
-    patrol: Arc<ShipState>,
+    carrier: ShipState,
+    battleship: ShipState,
+    destroyer: ShipState,
+    submarine: ShipState,
+    patrol: ShipState,
     refs: RawShipBoard,
 }
 
 impl ShipSet {
-    pub fn ref_for(&self, cell: Cell) -> Option<Arc<ShipState>> {
-        self.refs[cell.x()][cell.y()].clone()
+    pub fn ship_in(&self, cell: Cell) -> Option<ShipState> {
+        self.refs[cell.x()][cell.y()]
     }
     pub fn contains_ship(&self, cell: Cell) -> bool {
-        self.ref_for(cell).is_some()
+        self.ship_in(cell).is_some()
     }
     pub fn occupied_cells(&self) -> Vec<Cell> {
         // 17 is the max number of cells we could take up
@@ -36,7 +36,7 @@ impl ShipSet {
     }
 }
 
-type RawShipBoard = [[Option<Arc<ShipState>>; 10]; 10];
+type RawShipBoard = [[Option<ShipState>; 10]; 10];
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Default)]
 pub struct ShipSetBuilder {
@@ -55,38 +55,27 @@ impl ShipSetBuilder {
         if !self.is_valid() {
             return None;
         }
-        let carrier = Arc::new(self.carrier?);
-        let battleship = Arc::new(self.battleship?);
-        let destroyer = Arc::new(self.destroyer?);
-        let submarine = Arc::new(self.submarine?);
-        let patrol = Arc::new(self.patrol?);
+        let carrier = self.carrier?;
+        let battleship = self.battleship?;
+        let destroyer = self.destroyer?;
+        let submarine = self.submarine?;
+        let patrol = self.patrol?;
         // thank you, copy requirement for [None; 10]
-        let mut refs: [[Option<Arc<ShipState>>; 10]; 10] = [
-            [None, None, None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None, None, None],
-            [None, None, None, None, None, None, None, None, None, None],
-        ];
+        let mut refs: RawShipBoard = [[None; 10]; 10];
         for cell in carrier.occupies() {
-            refs[cell.x()][cell.y()] = Some(carrier.clone());
+            refs[cell.x()][cell.y()] = Some(carrier);
         }
         for cell in battleship.occupies() {
-            refs[cell.x()][cell.y()] = Some(battleship.clone());
+            refs[cell.x()][cell.y()] = Some(battleship);
         }
         for cell in destroyer.occupies() {
-            refs[cell.x()][cell.y()] = Some(destroyer.clone());
+            refs[cell.x()][cell.y()] = Some(destroyer);
         }
         for cell in submarine.occupies() {
-            refs[cell.x()][cell.y()] = Some(submarine.clone());
+            refs[cell.x()][cell.y()] = Some(submarine);
         }
         for cell in patrol.occupies() {
-            refs[cell.x()][cell.y()] = Some(patrol.clone());
+            refs[cell.x()][cell.y()] = Some(patrol);
         }
         Some(ShipSet {
             carrier,

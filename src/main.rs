@@ -20,6 +20,7 @@ use tokio::task::JoinSet;
 
 use cell::Cell;
 
+use crate::req_resp::ReqRespClient;
 pub use error::Error;
 
 #[tokio::main]
@@ -46,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 pub struct State {
-    pending_rooms: Arc<Mutex<HashMap<String, (Sender<Shot>, Receiver)>>>,
+    pending_rooms: Arc<Mutex<HashMap<String, ReqRespClient<String, String>>>>,
 }
 
 impl State {

@@ -6,5 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-crossterm = "0.26"
+owo-colors = "4"
 thiserror = "1"
+tokio = { version = "1", features = ["net", "signal", "rt-multi-thread", "macros", "io-util", "time"] }
+vss = "0.1"

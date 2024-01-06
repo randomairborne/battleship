@@ -5,8 +5,6 @@ use crate::{
     ship::{ShipSet, ShipState},
 };
 
-use Shot::Empty;
-
 #[derive(Debug, Clone)]
 pub struct Board {
     locals: RawBoard,
@@ -17,38 +15,7 @@ impl Board {
     /// If this function errors, then the ship state was invalid
     pub const fn new(ships: ShipSet) -> Self {
         Self {
-            locals: [
-                [
-                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                ],
-                [
-                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                ],
-                [
-                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                ],
-                [
-                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                ],
-                [
-                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                ],
-                [
-                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                ],
-                [
-                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                ],
-                [
-                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                ],
-                [
-                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                ],
-                [
-                    Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty, Empty,
-                ],
-            ],
+            locals: [[Shot::Empty; 10]; 10],
             ships,
         }
     }
